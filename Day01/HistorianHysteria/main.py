@@ -10,42 +10,33 @@ def process_file(filename):
     return left_entries, right_entries
 
 
-# Part 1
-with open("data.txt", "r") as file:
-    left_entries = []
-    right_entries = []
+def calculate_total_distance(left_entries, right_entries):
+    sorted_left = sorted(left_entries)
+    sorted_right = sorted(right_entries)
+    distance = sum(
+        abs(sorted_left[i] - sorted_right[i]) for i in range(len(left_entries))
+    )
+    return distance
 
-    # Iterate through each line in the file
-    for line in file:
-        # Split the line into two numbers and convert them to integers
-        left, right = map(int, line.split())
-        left_entries.append(left)
-        right_entries.append(right)
 
-sorted_left_entries = sorted(left_entries)
-sorted_right_entries = sorted(right_entries)
-sum = 0
-for i in range(len(left_entries)):
-    sum += abs(sorted_left_entries[i] - sorted_right_entries[i])
+def calculate_similarity_score(left_entries, right_entries):
+    similarity_score = sum(right_entries.count(left) * left for left in left_entries)
+    return similarity_score
 
-print(sum)
 
-# Part 2
-with open("data.txt", "r") as file:
-    left_entries = []
-    right_entries = []
+# Main execution
+if __name__ == "__main__":
+    test_left_entries, test_right_entries = process_file("dummydata.txt")
+    assert calculate_total_distance(test_left_entries, test_right_entries) == 11
+    assert calculate_similarity_score(test_left_entries, test_right_entries) == 31
 
-    # Iterate through each line in the file
-    for line in file:
-        # Split the line into two numbers and convert them to integers
-        left, right = map(int, line.split())
-        left_entries.append(left)
-        right_entries.append(right)
+    # Process the file once
+    left_entries, right_entries = process_file("data.txt")
 
-sorted_left_entries = sorted(left_entries)
-sorted_right_entries = sorted(right_entries)
-similarity_score = 0
-for i in range(len(left_entries)):
-    similarity_score += right_entries.count(left_entries[i]) * left_entries[i]
+    # Part 1: Calculate total distance
+    total_distance = calculate_total_distance(left_entries, right_entries)
+    print("Total Distance:", total_distance)
 
-print(similarity_score)
+    # Part 2: Calculate similarity score
+    similarity_score = calculate_similarity_score(left_entries, right_entries)
+    print("Similarity Score:", similarity_score)
