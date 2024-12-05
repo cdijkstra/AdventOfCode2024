@@ -38,28 +38,29 @@ class SequenceProcessor:
         score = 0
         for sequence in self.sequences:
             if not self.is_valid_move(sequence):
-                i = 0
-                while i < len(sequence) - 1:  # Use a while loop to control the flow
-                    current_value = sequence[i]
-                    vars = self.find_keys_with_value(current_value)
-                    modified = False  # Flag to track if the sequence has been modified
+                # Continue modifying the sequence until no more changes are made
+                while True:
+                    modified = False  # Reset modified flag
+                    for i in range(len(sequence) - 1):
+                        current_value = sequence[i]
+                        vars = self.find_keys_with_value(current_value)
 
-                    for j in range(i + 1, len(sequence)):
-                        el = sequence[j]
-                        if el in vars:
-                            sequence.pop(j)
-                            sequence.insert(i, el)
-                            modified = True  # Indicate that the sequence was modified
+                        for j in range(i + 1, len(sequence)):
+                            el = sequence[j]
+                            if el in vars:
+                                # Move element to the curent position in array due to constraints
+                                sequence.pop(j)
+                                sequence.insert(i, el)
+                                modified = True
 
-                            # Restart loop since the sequence has changed
-                            break
+                                break  # Restart loop since the sequence has changed
 
-                    if modified:
-                        continue
+                        if modified:
+                            break  # Exit the inner loop and restart the outer loop
 
-                    i += 1
+                    if not modified:
+                        break  # If no modifications were made, exit the while loop
 
-                print("succes", sequence)
                 score += sequence[(len(sequence) - 1) // 2]
 
         return score
