@@ -3,13 +3,12 @@ class SequenceProcessor:
         # Initialize instance attributes
         self.data_dict = {}
         self.sequences = []
-        self.score = 0
 
     def process_file(self, filename):
         """Read the file and split into list."""
         self.data_dict = {}
         self.sequences = []
-        self.score = 0
+
         with open(filename, "r") as file:
             sequence = False
             for line in file:
@@ -20,32 +19,53 @@ class SequenceProcessor:
 
                 if not sequence:
                     nums = list(map(int, line.split("|")))
-                    print(nums)
                     if nums[0] in self.data_dict:
-                        print("Append", nums[1], "to", nums[0])
                         self.data_dict[nums[0]].append(nums[1])
                     else:
-                        print("Add", nums[1], "to", nums[0])
                         self.data_dict[nums[0]] = [nums[1]]
                 else:
                     seq = list(map(int, line.split(",")))
                     self.sequences.append(seq)
 
     def calculate_score(self):
-        for sequence in self.sequences:
-            if self.is_valid_move(sequence):
-                print(sequence)
-                self.score += sequence[(len(sequence) - 1) // 2]
+        return sum(
+            sequence[(len(sequence) - 1) // 2]
+            for sequence in self.sequences
+            if self.is_valid_move(sequence)
+        )
 
-        print(self.score)
-        return self.score
+    def calculate_shuffle_score(self):
+        for sequence in self.sequences:
+            if not self.is_valid_move(sequence):
+                print("Invalid move", sequence)
+                for i in range(0, len(sequence) - 1):
+                    current_value = sequence[i]
+                    vars = self.find_keys_with_value(current_value)
+
+                    print("Entry", current_value, "Vars: ", vars)
+                    for j in range(i + 1, len(sequence)):
+                        el = sequence[j]
+                        if el in vars:
+                            sequence.pop(j)
+                            print("Pop index", j, "El: ", el, "Insert at ", i)
+                            sequence.insert(i, el)
+                            print(sequence)
+
+                            # Restart loop since the sequence has changed
+                            break
+                print("succes", sequence)
+
+    def find_keys_with_value(self, target_value):
+        return [key for key, value in self.data_dict.items() if target_value in value]
 
     def is_valid_move(self, sequence):
         for i in range(1, len(sequence)):
-            if sequence[i] in self.data_dict:
-                for el in self.data_dict[sequence[i]]:
-                    if el in sequence[:i]:
-                        return False
+            current_value = sequence[i]
+
+            if current_value in self.data_dict:
+                associated_elements = self.data_dict[current_value]
+                if any(el in associated_elements for el in sequence[:i]):
+                    return False
         return True
 
     def display_results(self):
@@ -58,5 +78,9 @@ class SequenceProcessor:
 if __name__ == "__main__":
     processor = SequenceProcessor()
     processor.process_file("dummydata.txt")
-    processor.display_results()
     assert processor.calculate_score() == 143
+    assert processor.calculate_shuffle_score() == 143
+
+    processor.process_file("data.txt")
+    print("Part 1", processor.calculate_score())
+    print("Part 2", processor.calculate_shuffle_score())
