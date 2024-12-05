@@ -35,25 +35,34 @@ class SequenceProcessor:
         )
 
     def calculate_shuffle_score(self):
+        score = 0
         for sequence in self.sequences:
             if not self.is_valid_move(sequence):
-                print("Invalid move", sequence)
-                for i in range(0, len(sequence) - 1):
+                i = 0
+                while i < len(sequence) - 1:  # Use a while loop to control the flow
                     current_value = sequence[i]
                     vars = self.find_keys_with_value(current_value)
+                    modified = False  # Flag to track if the sequence has been modified
 
-                    print("Entry", current_value, "Vars: ", vars)
                     for j in range(i + 1, len(sequence)):
                         el = sequence[j]
                         if el in vars:
                             sequence.pop(j)
-                            print("Pop index", j, "El: ", el, "Insert at ", i)
                             sequence.insert(i, el)
-                            print(sequence)
+                            modified = True  # Indicate that the sequence was modified
 
                             # Restart loop since the sequence has changed
                             break
+
+                    if modified:
+                        continue
+
+                    i += 1
+
                 print("succes", sequence)
+                score += sequence[(len(sequence) - 1) // 2]
+
+        return score
 
     def find_keys_with_value(self, target_value):
         return [key for key, value in self.data_dict.items() if target_value in value]
@@ -79,7 +88,7 @@ if __name__ == "__main__":
     processor = SequenceProcessor()
     processor.process_file("dummydata.txt")
     assert processor.calculate_score() == 143
-    assert processor.calculate_shuffle_score() == 143
+    assert processor.calculate_shuffle_score() == 123
 
     processor.process_file("data.txt")
     print("Part 1", processor.calculate_score())
