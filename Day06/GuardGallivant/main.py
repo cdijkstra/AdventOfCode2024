@@ -1,3 +1,4 @@
+import copy
 from collections import namedtuple
 
 Coordinate = namedtuple("Coordinate", ["x", "y"])
@@ -54,13 +55,59 @@ def find_path(grid):
             if coordinates not in visited:
                 visited.append(coordinates)
 
-    return len(visited)
+    return visited
+
+
+def find_loop(grid):
+    coordinates = next(
+        Coordinate(x, y)
+        for x, row in enumerate(grid)
+        for y, char in enumerate(row)
+        if char == "^"
+    )
+    dir = "N"
+    visited = [(coordinates, dir)]
+    while True:
+        new_coordinates = obtain_new_coordinates(coordinates, dir)
+        if invalid_coordinates(new_coordinates, len(grid), len(grid[0])):
+            break
+
+        if grid[new_coordinates.x][new_coordinates.y] == "#":
+            dir = make_turn(dir)
+        else:
+            coordinates = new_coordinates
+            if coordinates not in visited:
+                visited.append((coordinates, dir))
+            else:
+                return True  # Found loop
+
+    return False
+
+
+def find_loops(grid):
+    initial_coordinates = next(
+        Coordinate(x, y)
+        for x, row in enumerate(grid)
+        for y, char in enumerate(row)
+        if char == "^"
+    )
+    count = 0
+    allowed_locations = [loc for loc in find_path(grid) if loc != initial_coordinates]
+    for location in allowed_locations:
+        new_grid = copy.deepcopy(grid)
+        new_grid[location.x][location.y] = "#"
+        if find_loop(new_grid):
+            count += 1
+    print(count)
+    return count
 
 
 # Main execution
 if __name__ == "__main__":
     grid = process_file("dummydata.txt")
-    assert find_path(grid) == 41
+    assert len(find_path(grid)) == 41
+    assert find_loops(grid) == 6
 
     grid = process_file("data.txt")
-    print("Part 1", find_path(grid))
+    path = find_path(grid)
+    print("Part 1", len(path))
