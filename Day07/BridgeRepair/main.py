@@ -42,21 +42,18 @@ def check_combinations(result, numbers):
         # Build the expression as a string
         expression = str(numbers[0])
         for num, op in zip(numbers[1:], ops):
-            expression += f" {op} {num}"
+            expression = f"({expression} {op} {num})"
 
-        print(expression, "==", result, "and", eval(expression))
-        # Evaluate the expression and check if it equals the result
         if eval(expression) == result:
-            print("Yep", result, numbers)
             return expression  # Return the first valid expression that matches
 
-    print("Nope", result, numbers)
     return None  # No valid combination found
 
 
 # Main execution
 if __name__ == "__main__":
     equations = process_file("dummydata.txt")
-    print(equations)
     result = add_valid_options(equations)
-    print(result)
+
+    equations = process_file("data.txt")
+    print("Part 1;", add_valid_options(equations))
