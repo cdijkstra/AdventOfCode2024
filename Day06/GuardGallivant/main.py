@@ -76,10 +76,10 @@ def find_loop(grid):
             dir = make_turn(dir)
         else:
             coordinates = new_coordinates
-            if coordinates not in visited:
-                visited.append((coordinates, dir))
-            else:
+            if (coordinates, dir) in visited:
                 return True  # Found loop
+            else:
+                visited.append((coordinates, dir))
 
     return False
 
@@ -95,10 +95,14 @@ def find_loops(grid):
     allowed_locations = [loc for loc in find_path(grid) if loc != initial_coordinates]
     for location in allowed_locations:
         new_grid = copy.deepcopy(grid)
-        new_grid[location.x][location.y] = "#"
+        new_grid[location.x] = (
+            new_grid[location.x][: location.y]
+            + "#"
+            + new_grid[location.x][location.y + 1 :]
+        )
+
         if find_loop(new_grid):
             count += 1
-    print(count)
     return count
 
 
@@ -109,5 +113,5 @@ if __name__ == "__main__":
     assert find_loops(grid) == 6
 
     grid = process_file("data.txt")
-    path = find_path(grid)
-    print("Part 1", len(path))
+    print("Part 1", len(find_path(grid)))
+    print("Part 2", find_loops(grid))
