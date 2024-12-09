@@ -1,9 +1,13 @@
 import itertools
+from collections import namedtuple
 
 
 def process_file(filename):
     with open(filename, "r") as file:
         return file.readline()
+
+
+Coordinate = namedtuple("Coordinate", ["min", "max"])
 
 
 def calculate(instructions):
@@ -27,56 +31,67 @@ def calculate2(instructions):
         entry = str(idx // 2) if idx % 2 == 0 else "."
         grid.extend(itertools.repeat(entry, int(instruction)))
 
+    # File IDs in decreasing order
+    unique_files = sorted(set(grid) - {"."}, reverse=True)
+
+    print("Unique files", unique_files)
+    file_indices = {
+        file_id: Coordinate(min=min(indices), max=max(indices))
+        for file_id in unique_files
+        if (indices := [idx for idx, value in enumerate(grid) if value == file_id])
+    }
+
+    print("File indices", file_indices)
+
     free_spans = []
     start = None
     for i, char in enumerate(grid):
         if char == "." and start is None:
             start = i
         elif char != "." and start is not None:
-            free_spans.append((start, i - 1))
+            free_spans.append(Coordinate(min=start, max=i - 1))
             start = None
+
     print("Free spans", free_spans)
+    for file_id, file_indices in file_indices.items():
+        file_size = file_indices.max - file_indices.min + 1
+        filtered_span = next(
+            (
+                span
+                for span in free_spans
+                if span.min <= file_indices.min and span.max - span.min + 1 >= file_size
+            ),
+            None,
+        )
 
-    unique_files = sorted(
-        set(grid) - {"."}, reverse=True
-    )  # File IDs in decreasing order
+        print(
+            "Filted span",
+            filtered_span,
+            "for file indices",
+            file_indices,
+            "and file size",
+            file_size,
+        )
+        if filtered_span is None:
+            continue
 
-    print("Unique files", unique_files)
-    for file_id in unique_files:
-        indices = [idx for idx, value in enumerate(grid) if value == file_id]
-        file_size = len(indices)
-        if not any(start < indices[0] for start, _ in free_spans):
-            break
+        for i in range(filtered_span.min, filtered_span.max):
+            grid[i] = file_id
+        for i in range(file_indices.min, file_indices.max + 1):
+            grid[i] = "."
 
-        print("Unique file", file_id)
-        for i, (start, end) in enumerate(free_spans):
-            print("Start", start, "End", end)
-            if not (file_size <= (end - start + 1)):
-                continue
+        if filtered_span.max - filtered_span.min == file_size:
+            free_spans.remove(filtered_span)
+        else:
+            print("Before updating", free_spans)
+            free_spans[free_spans.index(filtered_span)] = Coordinate(
+                min=filtered_span.min + file_size - 1, max=filtered_span.max
+            )
+            print("After updating", free_spans)
 
-            for i, idx in enumerate(indices):
-                grid[start + i] = file_id
-                grid[idx] = "."
+        print(grid)
 
-            if file_size == (end - start + 1):
-                free_spans.pop(i)
-                print("Pop entry with start", start)
-                break
-            else:
-                print(free_spans)
-                free_spans[i] = (start + file_size, end)
-                print(
-                    "added file_size ",
-                    file_size,
-                    " to start",
-                    start,
-                    "and index: ",  # Update free_spans after breaking out of the inner loop
-                    i,
-                )
-                print(free_spans)
-            break
-    print(grid)
-    return sum(int(grid[idx]) * idx for idx in range(len(grid)))
+    return 5
 
 
 if __name__ == "__main__":
