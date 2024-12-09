@@ -7,30 +7,21 @@ def process_file(filename):
 
 
 def calculate(instructions):
-    grid = ""
-    for idx in range(len(instructions)):
-        if idx % 2 == 0:
-            grid += "".join(itertools.repeat(str(int(idx / 2)), int(instructions[idx])))
-        else:
-            grid += "".join(itertools.repeat(".", int(instructions[idx])))
+    grid = []
+    for idx, instruction in enumerate(instructions):
+        print(idx, instruction)
+        entry = str(idx // 2) if idx % 2 == 0 else "."
+        grid.extend(itertools.repeat(entry, int(instruction)))
 
-    # Now move stones to the left
-    while grid.count(".") > 0:
-        idx = grid.find(".")
-        # Move last character to index idx
-        grid = grid[:idx] + grid[-1] + grid[idx + 1 : -1]
+    while "." in grid:
+        grid[grid.index(".")] = grid.pop()
 
-    sum = 0
-    for idx in range(len(grid)):
-        sum += int(grid[idx]) * idx
-    return sum
+    return sum(int(grid[idx]) * idx for idx in range(len(grid)))
 
 
-# Main execution
 if __name__ == "__main__":
     instructions = process_file("dummydata.txt")
     assert calculate(instructions) == 1928
 
-    # 91411296588 is too low
-    instructions = process_file("data.txt")
-    print("Part 1", calculate(instructions))
+    # instructions = process_file("data.txt")
+    # print("Part 1", calculate(instructions))
