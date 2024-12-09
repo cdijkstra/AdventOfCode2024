@@ -9,13 +9,9 @@ def process_file(filename):
 def calculate(instructions):
     grid = []
     for idx, instruction in enumerate(instructions):
-        if idx % 2 == 0:
-            entry = str(idx // 2)
-            grid.extend(itertools.repeat(entry, int(instruction)))
-        else:
-            entry = "".join(".", instruction)
-            grid.extend(entry)
-        print(grid)
+        print(idx, instruction)
+        entry = str(idx // 2) if idx % 2 == 0 else "."
+        grid.extend(itertools.repeat(entry, int(instruction)))
 
     while "." in grid:
         grid[grid.index(".")] = grid.pop()
