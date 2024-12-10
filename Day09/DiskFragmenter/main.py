@@ -1,13 +1,12 @@
 import itertools
 from collections import namedtuple
 
+Coordinate = namedtuple("Coordinate", ["min", "max"])
+
 
 def process_file(filename):
     with open(filename, "r") as file:
         return file.readline()
-
-
-Coordinate = namedtuple("Coordinate", ["min", "max"])
 
 
 def calculate(instructions):
@@ -43,12 +42,13 @@ def calculate2(instructions):
         file_size = file_indices.max - file_indices.min + 1
 
         for i in range(file_indices.max):
-            if all(grid[j] == "." for j in range(i, i + file_size)):
-                # Move file
-                for x in range(file_size):
-                    grid[file_indices.min + x] = "."
-                    grid[i + x] = str(file_id)
-                break
+            if not all(grid[j] == "." for j in range(i, i + file_size)):
+                continue
+
+            # Move file using slicing
+            grid[i : i + file_size] = [str(file_id)] * file_size
+            grid[file_indices.min : file_indices.min + file_size] = ["."] * file_size
+            break
 
     return sum(int(grid[idx]) * idx for idx in range(len(grid)) if grid[idx] != ".")
 
