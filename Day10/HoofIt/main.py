@@ -34,28 +34,54 @@ def find_neighbors(coordinate: Coordinate) -> Coordinate:
     return neighbors
 
 
-def traverse_path(coordinate: Coordinate, history=[]):
-    history.append(coordinate)
-
+def traverse_trailhead_path(coordinate: Coordinate):
     if coordinate.value == 9:
-        print("Made it, with history", history)
-        return coordinate
+        return [coordinate]
 
     destinations = []  # Initialize path count
     for neighbor in find_neighbors(coordinate):
         if neighbor.value == coordinate.value + 1:
-            destinations += traverse_path(neighbor, history[:])
+            destinations += traverse_trailhead_path(neighbor)
+
     return destinations
+
+
+def traverse_rating_path(coordinate: Coordinate):
+    if coordinate.value == 9:
+        return 1
+
+    destinations = 0  # Initialize path count
+    for neighbor in find_neighbors(coordinate):
+        if neighbor.value == coordinate.value + 1:
+            destinations += traverse_rating_path(neighbor)
+
+    return destinations
+
+
+def calculate_trailheads(grid):
+    trailhead = 0
+    for zero_coordinates in find_zeroes(grid):
+        destinations = traverse_trailhead_path(zero_coordinates)
+        trailhead += len(set(destinations))
+    return trailhead
+
+
+def calculate_rating(grid):
+    rating = 0
+    for zero_coordinates in find_zeroes(grid):
+        destinations = traverse_rating_path(zero_coordinates)
+        rating += destinations
+    return rating
 
 
 # Main execution
 if __name__ == "__main__":
+    grid = process_file("dummydata.txt")
+    assert calculate_trailheads(grid) == 1
     grid = process_file("dummydata2.txt")
+    assert calculate_trailheads(grid) == 36
+    assert calculate_rating(grid) == 81
 
-    trailhead = 0
-    for zero_coordinates in find_zeroes(grid):
-        destinations = traverse_path(zero_coordinates)
-
-        print("Destinations", destinations)
-        trailhead += len(set(destinations)) / 3
-    print(trailhead)
+    grid = process_file("data.txt")
+    print("Part 1:", calculate_trailheads(grid))
+    print("Part 2:", calculate_rating(grid))
