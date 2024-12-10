@@ -34,20 +34,26 @@ def find_diagonal_word(grid, word):
     # Check diagonals (top-left to bottom-right)
     for row in range(rows):
         for col in range(cols):
-            if row + word_len <= rows and col + word_len <= cols:
-                diagonal = [grid[row + i][col + i] for i in range(word_len)]
-                if "".join(diagonal) in {word, word[::-1]}:
-                    occurrences += 1
+            if not (row + word_len <= rows and col + word_len <= cols):
+                continue
+
+            diagonal = [grid[row + i][col + i] for i in range(word_len)]
+            if "".join(diagonal) not in {word, word[::-1]}:
+                continue
+            occurrences += 1
 
     print(occurrences)
 
     # Check diagonals (top-right to bottom-left)
     for row in range(rows):
         for col in range(cols):
-            if row + word_len <= rows and col - word_len + 1 >= 0:
-                diagonal = [grid[row + i][col - i] for i in range(word_len)]
-                if "".join(diagonal) in {word, word[::-1]}:
-                    occurrences += 1
+            if not (row + word_len <= rows and col - word_len + 1 >= 0):
+                continue
+
+            diagonal = [grid[row + i][col - i] for i in range(word_len)]
+            if "".join(diagonal) not in {word, word[::-1]}:
+                continue
+            occurrences += 1
 
     print(occurrences)
 
