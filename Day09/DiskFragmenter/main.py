@@ -13,11 +13,9 @@ Coordinate = namedtuple("Coordinate", ["min", "max"])
 def calculate(instructions):
     grid = []
     for idx, instruction in enumerate(instructions):
-        print(idx, instruction)
         entry = str(idx // 2) if idx % 2 == 0 else "."
         grid.extend(itertools.repeat(entry, int(instruction)))
 
-    print(grid)
     while "." in grid:
         grid[grid.index(".")] = grid.pop()
 
@@ -27,22 +25,18 @@ def calculate(instructions):
 def calculate2(instructions):
     grid = []
     for idx, instruction in enumerate(instructions):
-        print(idx, instruction)
         entry = str(idx // 2) if idx % 2 == 0 else "."
         grid.extend(itertools.repeat(entry, int(instruction)))
 
     # File IDs in decreasing order
     unique_files = sorted(set(grid) - {"."}, reverse=True)
-
-    print("Unique files", unique_files)
     file_indices = {
         file_id: Coordinate(min=min(indices), max=max(indices))
         for file_id in unique_files
         if (indices := [idx for idx, value in enumerate(grid) if value == file_id])
     }
 
-    print("File indices", file_indices)
-
+    # Find all free spans and put in array that will be updated
     free_spans = []
     start = None
     for i, char in enumerate(grid):
@@ -52,9 +46,10 @@ def calculate2(instructions):
             free_spans.append(Coordinate(min=start, max=i - 1))
             start = None
 
-    print("Free spans", free_spans)
+    # Loop through files in reversed file ID order
     for file_id, file_indices in file_indices.items():
         file_size = file_indices.max - file_indices.min + 1
+        # Find first free span that is large enough
         filtered_span = next(
             (
                 span
@@ -64,34 +59,24 @@ def calculate2(instructions):
             None,
         )
 
-        print(
-            "Filted span",
-            filtered_span,
-            "for file indices",
-            file_indices,
-            "and file size",
-            file_size,
-        )
-        if filtered_span is None:
+        if filtered_span is None:  # Continueif not found
             continue
 
-        for i in range(filtered_span.min, filtered_span.max):
-            grid[i] = file_id
-        for i in range(file_indices.min, file_indices.max + 1):
-            grid[i] = "."
+        # Update grid by moving file
+        for i in range(file_indices.max - file_indices.min + 1):
+            grid[filtered_span.min + i] = file_id
+            grid[file_indices.min + i] = "."
 
-        if filtered_span.max - filtered_span.min == file_size:
+        if (
+            filtered_span.max - filtered_span.min + 1 == file_size
+        ):  # Remove if it fits exactly
             free_spans.remove(filtered_span)
-        else:
-            print("Before updating", free_spans)
+        else:  # Otherwise update min coordinate of free span
             free_spans[free_spans.index(filtered_span)] = Coordinate(
-                min=filtered_span.min + file_size - 1, max=filtered_span.max
+                min=filtered_span.min + file_size, max=filtered_span.max
             )
-            print("After updating", free_spans)
 
-        print(grid)
-
-    return 5
+    return sum(int(grid[idx]) * idx for idx in range(len(grid)) if grid[idx] != ".")
 
 
 if __name__ == "__main__":
@@ -99,5 +84,7 @@ if __name__ == "__main__":
     assert calculate(instructions) == 1928
     assert calculate2(instructions) == 2858
 
-    # instructions = process_file("data.txt")
-    # print("Part 1", calculate(instructions))
+    instructions = process_file("data.txt")
+    print("Part 1", calculate(instructions))
+    # 6615388678712 is too high
+    print("Part 2", calculate2(instructions))
