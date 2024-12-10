@@ -34,44 +34,41 @@ def find_neighbors(coordinate: Coordinate) -> Coordinate:
     return neighbors
 
 
-def traverse_trailhead_path(coordinate: Coordinate):
-    if coordinate.value == 9:
-        return [coordinate]
+def traverse_path(coordinate: Coordinate, return_paths=True):
+    """
+    Recursively traverse paths.
 
-    destinations = []  # Initialize path count
+    :param coordinate: The current Coordinate to process.
+    :param return_paths: Whether to return full paths (list of coordinates) or just path counts (integer).
+    :return: A list of valid paths or a path count based on `return_paths`.
+    """
+    if coordinate.value == 9:
+        return [coordinate] if return_paths else 1
+
+    destinations = [] if return_paths else 0  # Initialize path count
     for neighbor in find_neighbors(coordinate):
         if neighbor.value == coordinate.value + 1:
-            destinations += traverse_trailhead_path(neighbor)
-
-    return destinations
-
-
-def traverse_rating_path(coordinate: Coordinate):
-    if coordinate.value == 9:
-        return 1
-
-    destinations = 0  # Initialize path count
-    for neighbor in find_neighbors(coordinate):
-        if neighbor.value == coordinate.value + 1:
-            destinations += traverse_rating_path(neighbor)
+            destinations += traverse_path(neighbor, return_paths)
 
     return destinations
 
 
 def calculate_trailheads(grid):
-    trailhead = 0
-    for zero_coordinates in find_zeroes(grid):
-        destinations = traverse_trailhead_path(zero_coordinates)
-        trailhead += len(set(destinations))
-    return trailhead
+    return sum(
+        len(
+            set(
+                traverse_path(zero_coordinates)
+            )  # Use len(set)) to remove duplicates and find amount of destinations
+        )
+        for zero_coordinates in find_zeroes(grid)
+    )
 
 
 def calculate_rating(grid):
-    rating = 0
-    for zero_coordinates in find_zeroes(grid):
-        destinations = traverse_rating_path(zero_coordinates)
-        rating += destinations
-    return rating
+    return sum(
+        traverse_path(zero_coordinates, return_paths=False)
+        for zero_coordinates in find_zeroes(grid)
+    )
 
 
 # Main execution
