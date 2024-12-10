@@ -42,8 +42,6 @@ def find_diagonal_word(grid, word):
                 continue
             occurrences += 1
 
-    print(occurrences)
-
     # Check diagonals (top-right to bottom-left)
     for row in range(rows):
         for col in range(cols):
@@ -54,8 +52,6 @@ def find_diagonal_word(grid, word):
             if "".join(diagonal) not in {word, word[::-1]}:
                 continue
             occurrences += 1
-
-    print(occurrences)
 
     return occurrences
 
@@ -98,6 +94,4 @@ if __name__ == "__main__":
 
     # Part 1: Count XMAS
     print("Xmas part 1:", find_word(grid, "XMAS"))
-
-    # Part 2: Count MAS
     print("Xmas part 2:", find_mas_occurrence(grid))
