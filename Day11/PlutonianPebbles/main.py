@@ -7,6 +7,7 @@ def process_file(filename):
 def blink(rocks, blinks):
     for blink in range(blinks):
         rock_index = 0
+        print(rocks)
         while rock_index < len(rocks):
             # Apply rules
             if rocks[rock_index] == 0:
@@ -39,3 +40,5 @@ if __name__ == "__main__":
 
     rocks = process_file("data.txt")
     print("Part 1:", blink(rocks, 25))
+    rocks = process_file("data.txt")
+    print("Part 2:", blink(rocks, 75))
