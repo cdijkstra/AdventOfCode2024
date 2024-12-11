@@ -41,7 +41,6 @@ if __name__ == "__main__":
 
     # # Process the file once
     instructions = process_file("data.txt")
-    print(instructions)
     # # Part 1: Calculate generic safety
     print("Part 1:", calculate_multiplication(instructions))
     print("Part 2:", calculate_dos_multiplication(instructions))
