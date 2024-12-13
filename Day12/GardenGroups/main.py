@@ -1,8 +1,11 @@
-import copy
+import queue
+import random
 from collections import namedtuple
+from functools import reduce
 from itertools import count
 
 Coordinate = namedtuple("Coordinate", ["x", "y"])
+directions = [(-1, 0), (1, 0), (0, -1), (0, 1)]
 
 
 def process_file(filename):
@@ -29,11 +32,37 @@ def find_coordinates(grid, flower):
     return coordinates
 
 
+def find_groups(coordinates):
+    q = queue.Queue()
+    visited = []
+    groups = []
+    while len(visited) < len(coordinates):
+        group = []
+        remaining_coordinates = [coord for coord in coordinates if coord not in visited]
+        rand_val = random.choice(remaining_coordinates)
+        q.put(rand_val)
+
+        while q.qsize() > 0:
+            entry = q.get()
+            if entry in visited:
+                continue
+
+            visited.append(entry)
+            group.append(entry)
+            for dx, dy in directions:
+                neighbor = Coordinate(entry.x + dx, entry.y + dy)
+                if neighbor in coordinates and neighbor not in visited:
+                    # print("Adding neighbor", neighbor)
+                    q.put(neighbor)
+
+        groups.append(group)
+
+    return groups
+
+
 def find_perimeter(coordinates: Coordinate):
     """Find perimeters. Every entry adds 4 - amount of same neighbors"""
     perimeter = 0
-    directions = [(-1, 0), (1, 0), (0, -1), (0, 1)]
-
     for coordinate in coordinates:
         contribution = 4
         for dx, dy in directions:
@@ -41,26 +70,24 @@ def find_perimeter(coordinates: Coordinate):
             if neighbor in coordinates:
                 contribution -= 1
         perimeter += contribution
-    print("Found perimeter", perimeter)
     return perimeter
 
 
 def group(grid):
     # Find areas
     flower_dict = {}
-    for flower in find_flowers(grid):
-        flower_dict[flower] = [count_flowers(grid, flower)]
+    for flower in sorted(find_flowers(grid)):
         coordinates = find_coordinates(grid, flower)
-        flower_dict[flower].append(find_perimeter(coordinates))
+        groups = find_groups(coordinates)
+        if len(groups) > 1:
+            for idx, group in enumerate(groups):
+                flower_dict[flower + str(idx)] = [len(group)]
+                flower_dict[flower + str(idx)].append(find_perimeter(group))
+        else:
+            flower_dict[flower] = [count_flowers(grid, flower)]
+            flower_dict[flower].append(find_perimeter(coordinates))
 
-    print(flower_dict)
-    perimeter = 0
-    for value in flower_dict.values():
-        contribution = 1
-        for val in value:
-            contribution *= val
-        perimeter += contribution
-    return perimeter
+    return sum(reduce(lambda x, y: x * y, group, 1) for group in flower_dict.values())
 
 
 # Main execution
@@ -68,8 +95,8 @@ if __name__ == "__main__":
     grid = process_file("dummydata.txt")
     assert group(grid) == 140
     grid = process_file("dummydata2.txt")
-    assert group(grid) == 772
+    assert group(grid) == 1930
 
-    rocks = process_file("data.txt")
+    grid = process_file("data.txt")
     print("Part 1:", group(grid))
-    print("Part 2:", group(grid))
+    # print("Part 2:", group(grid))
