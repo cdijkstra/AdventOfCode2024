@@ -3,6 +3,7 @@ import random
 from collections import namedtuple
 from functools import reduce
 from itertools import count
+from typing import List
 
 Coordinate = namedtuple("Coordinate", ["x", "y"])
 directions = [(-1, 0), (1, 0), (0, -1), (0, 1)]
@@ -90,57 +91,58 @@ def group(grid):
     return sum(reduce(lambda x, y: x * y, group, 1) for group in flower_dict.values())
 
 
-def dfs(x, y, flower_type):
-    """Perform DFS to mark all connected cells of the same flower type."""
-    stack = [(x, y)]
-    region_cells = []
-    visited[x][y] = True
-    while stack:
-        cx, cy = stack.pop()
-        region_cells.append((cx, cy))
-        # Check the 4 neighbors
-        for dx, dy in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
-            nx, ny = cx + dx, cy + dy
-            if (
-                in_bounds(nx, ny)
-                and not visited[nx][ny]
-                and grid[nx][ny] == flower_type
-            ):
-                visited[nx][ny] = True
-                stack.append((nx, ny))
-    return region_cells
-
-
-def count_border_sides(region_cells):
-    """Count the sides on the border of a region."""
-    sides = 0
-    for x, y in region_cells:
-        # Check 4 directions for boundaries
-        for dx, dy in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
-            nx, ny = x + dx, y + dy
-            if not in_bounds(nx, ny) or grid[nx][ny] != grid[x][y]:
-                sides += 1
-    return sides
-
-
-total_sides = 0
-
-
 def bulk(grid):
     # Find areas
     flower_dict = {}
     for flower in sorted(find_flowers(grid)):
         coordinates = find_coordinates(grid, flower)
         groups = find_groups(coordinates)
+        # print("Found groups", groups)
         if len(groups) > 1:
             for idx, group in enumerate(groups):
-                flower_dict[flower + str(idx)] = [len(group)]
-                flower_dict[flower + str(idx)].append(find_perimeter(group))
+                flower += str(idx)
+                flower_dict[flower] = [len(group)]
+                borders = find_border_coordinates(group, flower)
+                # print("Found borders", borders, " for", flower, group)
         else:
             flower_dict[flower] = [count_flowers(grid, flower)]
-            flower_dict[flower].append(find_perimeter(coordinates))
+            # Find border coordinates
+            borders = find_loop(groups[0], flower)
+            print("Found loop", borders, " for", flower, groups[0])
+            starting_point = borders[0]
 
     return sum(reduce(lambda x, y: x * y, group, 1) for group in flower_dict.values())
+
+
+def find_border_coordinates(coordinates: List[Coordinate], flower):
+    valid_coordinates = []
+    for coord in coordinates:
+        has_valid_neighbor = False
+        print(coord)
+        for dx, dy in directions:
+            neighbor = Coordinate(coord.x + dx, coord.y + dy)
+            if neighbor not in coordinates:
+                has_valid_neighbor = True
+
+            # If at least one valid neighbor is found, keep the coordinate
+        if has_valid_neighbor:
+            valid_coordinates.append(coord)
+
+    return valid_coordinates
+
+
+def find_loop(coordinates: List[Coordinate], flower):
+    loop = []
+    for coord in coordinates:
+        has_valid_neighbor = False
+        print(coord)
+        for dx, dy in directions:
+            neighbor = Coordinate(coord.x + dx, coord.y + dy)
+            if neighbor in coordinates:
+                continue
+            loop.append(neighbor)
+
+    return sorted(loop)
 
 
 # Main execution
@@ -149,8 +151,8 @@ if __name__ == "__main__":
     grid2 = process_file("dummydata2.txt")
     assert group(grid) == 140
     assert group(grid2) == 1930
-    assert group(grid) == 140
+    assert bulk(grid2) == 1206
 
     grid = process_file("data.txt")
     print("Part 1:", group(grid))
-    # print("Part 2:", group(grid))
+    print("Part 2:", bulk(grid))
