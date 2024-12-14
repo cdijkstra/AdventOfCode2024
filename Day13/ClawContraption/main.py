@@ -80,73 +80,36 @@ def calculate_prizes(contraptions):
     return tokens_spent
 
 
-def gcd(a, b):
-    while b:
-        a, b = b, a % b
-    return a
-
-
-def minimize_cost(contraptions):
+def solve_solutions(contraptions):
+    tokens_spent = 0
     for contraption in contraptions:
-        # Extract values
-        X_prize, Y_prize = contraption["Prize"]["X"], contraption["Prize"]["Y"]
-        X_A, Y_A = contraption["A"]["X_offset"], contraption["A"]["Y_offset"]
-        X_B, Y_B = contraption["B"]["X_offset"], contraption["B"]["Y_offset"]
+        # Justification of solution can be found in Solution.md
+        A = (
+            contraption["Prize"]["X"] * contraption["B"]["Y_offset"]
+            - contraption["Prize"]["Y"] * contraption["B"]["X_offset"]
+        ) / (
+            contraption["A"]["X_offset"] * contraption["B"]["Y_offset"]
+            - contraption["A"]["Y_offset"] * contraption["B"]["X_offset"]
+        )
+        B = (
+            contraption["Prize"]["X"] - contraption["A"]["X_offset"] * A
+        ) / contraption["B"]["X_offset"]
 
-        # Step 1: Calculate the GCD of the X and Y offsets for both buttons
-        gcd_X = gcd(X_A, X_B)
-        gcd_Y = gcd(Y_A, Y_B)
-
-        # Step 2: Check if the prize's X and Y are divisible by the respective GCDs
-        if X_prize % gcd_X != 0 or Y_prize % gcd_Y != 0:
-            print("No solution exists")
-            return None, float("inf")
-
-        # Step 3: Find a reasonable range for n_A and n_B by checking multiples of GCD
-        max_n_A = X_prize // X_A + 1
-        max_n_B = Y_prize // Y_B + 1
-
-        # Step 4: Use a better traversal strategy (explore in steps based on the GCDs)
-        best_cost = float("inf")
-        best_combo = None
-        start_time = time.time()
-
-        for n_A in range(0, max_n_A + 1):
-            for n_B in range(0, max_n_B + 1):
-                # Check if the current n_A and n_B satisfy the X and Y prize conditions
-                cost = 3 * n_A + n_B  # 3 for pressing A, 1 for pressing B
-                if (
-                    n_A * X_A + n_B * X_B == X_prize
-                    and n_A * Y_A + n_B * Y_B == Y_prize
-                ):
-                    if cost < best_cost:
-                        best_cost = cost
-                        best_combo = (n_A, n_B)
-
-                # Print debug every 5 seconds to see progress
-                if time.time() - start_time >= 5:
-                    print(f"Investigating: n_A={n_A}, n_B={n_B}, cost={cost}")
-                    start_time = time.time()  # Reset the timer
-
-        if best_combo:
-            print(f"Best combo: {best_combo}, Best cost: {best_cost}")
-        else:
-            print("No valid combination found")
-
-        return best_combo, best_cost
-
-    # If no solution is found
-    return None, float("inf")
+        if not (A.is_integer() and B.is_integer()):
+            continue
+        tokens_spent += A * 3 + B * 1
+    return tokens_spent
 
 
 # Main execution
 if __name__ == "__main__":
     contraptions = process_file("dummydata.txt")
     assert calculate_prizes(contraptions) == 480
+    assert solve_solutions(contraptions) == 480
     contraptions = process_file("data.txt")
-    # print("Part 1 =", calculate_prizes(contraptions))
+    print("Part 1 =", calculate_prizes(contraptions))
 
     for contraption in contraptions:
         contraption["Prize"]["X"] += 10_000_000_000_000
         contraption["Prize"]["Y"] += 10_000_000_000_000
-    print("Part 2 =", minimize_cost(contraptions))
+    print("Part 2 =", solve_solutions(contraptions))
