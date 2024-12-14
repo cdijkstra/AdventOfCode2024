@@ -1,60 +1,33 @@
-import heapq
 import math
 import re
-import time
+from collections import namedtuple
 
 button_pattern = r"Button (\w): X\+(\d+), Y\+(\d+)"
 prize_pattern = r"Prize: X=(\d+), Y=(\d+)"
+Contraption = namedtuple("Contraption", ["ax", "ay", "bx", "by", "px", "py"])
 
 
 def process_file(filename):
     """Read the file and split into list."""
-    parsed_data = []
     with open(filename, "r") as file:
-        current_entry = {}  # Temporary storage for one group of data
-
-        for line in file:
-            line = line.strip()
-
-            # Match Button entries
-            button_match = re.match(button_pattern, line)
-            if re.match(button_pattern, line):
-                button, x_offset, y_offset = button_match.groups()
-                current_entry[button] = {
-                    "X_offset": int(x_offset),
-                    "Y_offset": int(y_offset),
-                }
-
-            # Match Prize entry
-            prize_match = re.match(prize_pattern, line)
-            if prize_match:
-                x_prize, y_prize = map(int, prize_match.groups())
-                current_entry["Prize"] = {"X": x_prize, "Y": y_prize}
-
-            # If the line is empty, it means a new block starts
-            if not line and current_entry:
-                # if current_entry:
-                parsed_data.append(current_entry)
-                current_entry = {}
-
-        # Add the last entry if exists
-        if current_entry:
-            parsed_data.append(current_entry)
-
-    return parsed_data
+        return [
+            Contraption(*list(map(int, re.findall(r"\d+", contraption))))
+            for contraption in file.read().split("\n\n")
+        ]
 
 
+# Brute-force solution
 def calculate_prizes(contraptions):
     tokens_spent = 0
     for contraption in contraptions:
         # Find combinations to win, and calulcate the cheapest one
         bounds_a = [
-            math.ceil(contraption["Prize"]["X"] / contraption["A"]["X_offset"]),
-            math.ceil(contraption["Prize"]["Y"] / contraption["A"]["Y_offset"]),
+            math.ceil(contraption.px / contraption.ax),
+            math.ceil(contraption.py / contraption.ay),
         ]
         bounds_b = [
-            math.ceil(contraption["Prize"]["X"] / contraption["B"]["X_offset"]),
-            math.ceil(contraption["Prize"]["Y"] / contraption["B"]["Y_offset"]),
+            math.ceil(contraption.px / contraption.bx),
+            math.ceil(contraption.py / contraption.by),
         ]
 
         lower_bound = int(
@@ -65,11 +38,8 @@ def calculate_prizes(contraptions):
         for a in range(lower_bound, max(bounds_a)):
             for b in range(lower_bound, max(bounds_b)):
                 if not (
-                    a * contraption["A"]["X_offset"] + b * contraption["B"]["X_offset"]
-                    == contraption["Prize"]["X"]
-                    and a * contraption["A"]["Y_offset"]
-                    + b * contraption["B"]["Y_offset"]
-                    == contraption["Prize"]["Y"]
+                    a * contraption.ax + b * contraption.bx == contraption.px
+                    and a * contraption.ay + b * contraption.by == contraption.py
                 ):
                     continue
                 matches.append((a, b))
@@ -80,24 +50,19 @@ def calculate_prizes(contraptions):
     return tokens_spent
 
 
+# Elegant methematical solution
 def solve_solutions(contraptions):
     tokens_spent = 0
     for contraption in contraptions:
         # Justification of solution can be found in Solution.md
-        A = (
-            contraption["Prize"]["X"] * contraption["B"]["Y_offset"]
-            - contraption["Prize"]["Y"] * contraption["B"]["X_offset"]
-        ) / (
-            contraption["A"]["X_offset"] * contraption["B"]["Y_offset"]
-            - contraption["A"]["Y_offset"] * contraption["B"]["X_offset"]
+        A = (contraption.px * contraption.by - contraption.py * contraption.bx) / (
+            contraption.ax * contraption.by - contraption.ay * contraption.bx
         )
-        B = (
-            contraption["Prize"]["X"] - contraption["A"]["X_offset"] * A
-        ) / contraption["B"]["X_offset"]
+        B = (contraption.px - contraption.ax * A) / contraption.bx
 
         if not (A.is_integer() and B.is_integer()):
             continue
-        tokens_spent += A * 3 + B * 1
+        tokens_spent += int(A) * 3 + int(B) * 1
     return tokens_spent
 
 
@@ -109,7 +74,10 @@ if __name__ == "__main__":
     contraptions = process_file("data.txt")
     print("Part 1 =", calculate_prizes(contraptions))
 
-    for contraption in contraptions:
-        contraption["Prize"]["X"] += 10_000_000_000_000
-        contraption["Prize"]["Y"] += 10_000_000_000_000
+    for i, contraption in enumerate(contraptions):
+        # Replace the contraption in the list with the updated one
+        contraptions[i] = contraption._replace(
+            px=contraption.px + 10_000_000_000_000,
+            py=contraption.py + 10_000_000_000_000,
+        )
     print("Part 2 =", solve_solutions(contraptions))
