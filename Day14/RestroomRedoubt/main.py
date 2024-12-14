@@ -11,7 +11,6 @@ def process_file(filename):
         for line_number, line in enumerate(file):
             line = line.strip()  # Remove any leading/trailing whitespace
             if line:  # Ensure line is not empty
-                # Parse the p and v values from the line
                 parts = line.split()
                 p_values = parts[0][2:].split(",")  # Extract p=x,y
                 v_values = parts[1][2:].split(",")  # Extract v=x,y
@@ -31,12 +30,9 @@ def process_file(filename):
 
 
 def safety_score_quadrant(grid, x_range, y_range):
-    count = 0
-    for x in x_range:
-        for y in y_range:
-            if grid[y][x].isdigit():  # Check if there's a robot count at this position
-                count += int(grid[y][x])
-    return count
+    return sum(
+        int(grid[y][x]) for x in x_range for y in y_range if grid[y][x].isdigit()
+    )
 
 
 def calculate_safety_score(robots, width, height, seconds):
@@ -66,10 +62,27 @@ def update_coordinates(robots, width, height, seconds):
             y=(robot.y + seconds * robot.vy) % height,
         )
 
-    return visualize_grid(updated_robots, width, height)
+    return fill_grid(updated_robots, width, height)
 
 
-def visualize_grid(robots, width, height):
+def display_christmas_tree(robots, width, height):
+    updated_robots = copy.deepcopy(robots)
+    time = 0
+    while True:
+        time += 1
+        for key, robot in updated_robots.items():
+            updated_robots[key] = robot._replace(
+                x=(robot.x + robot.vx) % width,
+                y=(robot.y + robot.vy) % height,
+            )
+        positions = [(robot.x, robot.y) for robot in updated_robots.values()]
+        if len(positions) == len(set(positions)):  # All robots at different places
+            break
+
+    return time
+
+
+def fill_grid(robots, width, height):
     # Create a 2D grid initialized with dots
     grid = [["." for _ in range(width)] for _ in range(height)]
 
@@ -84,9 +97,9 @@ def visualize_grid(robots, width, height):
         grid[y][x] = str(count)
 
     # Print the grid
-    # for row in grid:
-    #     print(" ".join(row))
-    # print("\n")  # Add spacing between time steps
+    for row in grid:
+        print(" ".join(row))
+    print("\n")  # Add spacing between time steps
     return grid
 
 
@@ -97,3 +110,4 @@ if __name__ == "__main__":
 
     robots = process_file("data.txt")
     print("part 1", calculate_safety_score(robots, width=101, height=103, seconds=100))
+    print("part 2", display_christmas_tree(robots, width=101, height=103))
