@@ -3,10 +3,13 @@ from collections import namedtuple
 Coordinate = namedtuple("Coordinate", ["x", "y"])
 
 
-def process_file(filename):
+def process_file(filename, translate=False):
     """Read the file and split into list."""
     with open(filename, "r") as file:
         grid, instructions = file.read().split("\n\n")
+        if translate:
+            trans_table = str.maketrans({"#": "##", "O": "[]", ".": "..", "@": "@."})
+            grid = grid.translate(trans_table)
         grid = [list(line) for line in grid.strip().split("\n")]
         instructions = instructions.replace("\n", "").strip()
         return grid, instructions
@@ -29,11 +32,16 @@ def print_grid(grid):
 def traverse(grid, instructions):
     coords = find_coordinates(grid, "@")[0]
     for instruction in instructions:
+        print(print_grid(grid), "\nInstruction", instruction)
         if instruction == "<" and grid[coords.x][coords.y - 1] not in ["#"]:
             new_x, new_y = coords.x, coords.y - 1
-            if grid[new_x][new_y] == "O":
+            if grid[new_x][new_y] in ["O", "[", "]"]:
                 subarray = []
-                while grid[new_x][new_y] == "O" and grid[new_x][new_y - 1] != "#":
+                while (
+                    grid[new_x][new_y] in ["O", "[", "]"]
+                    and grid[new_x][new_y - 1] != "#"
+                ):
+                    print("Appending")
                     subarray.append(Coordinate(x=new_x, y=new_y))
                     new_y -= 1
                     if grid[new_x][new_y] != ".":
@@ -61,9 +69,12 @@ def traverse(grid, instructions):
         elif instruction == ">" and grid[coords.x][coords.y + 1] not in ["#"]:
             new_x = coords.x
             new_y = coords.y + 1
-            if grid[new_x][new_y] == "O":
+            if grid[new_x][new_y] in ["O", "[", "]"]:
                 subarray = []
-                while grid[new_x][new_y] == "O" and grid[new_x][new_y + 1] != "#":
+                while (
+                    grid[new_x][new_y] in ["O", "[", "]"]
+                    and grid[new_x][new_y + 1] != "#"
+                ):
                     subarray.append(Coordinate(x=new_x, y=new_y))
                     new_y += 1
                     if grid[new_x][new_y] != ".":
@@ -93,7 +104,7 @@ def traverse(grid, instructions):
         elif instruction == "^" and grid[coords.x - 1][coords.y] not in ["#"]:
             new_x = coords.x - 1
             new_y = coords.y
-            if grid[new_x][new_y] == "O":
+            if grid[new_x][new_y] in ["O", "[", "]"]:
                 subarray = []
                 while grid[new_x][new_y] == "O" and grid[new_x - 1][new_y] != "#":
                     subarray.append(Coordinate(x=new_x, y=new_y))
@@ -124,7 +135,7 @@ def traverse(grid, instructions):
             print("performing down from", coords)
             new_x = coords.x + 1
             new_y = coords.y
-            if grid[new_x][new_y] == "O":
+            if grid[new_x][new_y] in ["O", "[", "]"]:
                 subarray = []
                 while grid[new_x][new_y] == "O" and grid[new_x + 1][new_y] != "#":
                     subarray.append(Coordinate(x=new_x, y=new_y))
@@ -160,11 +171,14 @@ def traverse(grid, instructions):
 
 # Main execution
 if __name__ == "__main__":
-    grid, instructions = process_file("dummydata.txt")
-    assert traverse(grid, instructions) == 2028
+    # grid, instructions = process_file("dummydata.txt")
+    # assert traverse(grid, instructions) == 2028
 
-    grid, instructions = process_file("dummydata2.txt")
-    assert traverse(grid, instructions) == 10092
+    # grid, instructions = process_file("dummydata2.txt")
+    # assert traverse(grid, instructions) == 10092
 
-    grid, instructions = process_file("data.txt")
-    print("Part 1", traverse(grid, instructions))
+    # grid, instructions = process_file("data.txt")
+    # print("Part 1", traverse(grid, instructions))
+
+    grid, instructions = process_file("dummydata3.txt", translate=True)
+    traverse(grid, instructions)
