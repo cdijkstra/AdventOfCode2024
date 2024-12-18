@@ -35,37 +35,21 @@ def find_coordinates(grid, character):
     ]
 
 
-def get_valid_directions(current_direction):
-    # Define the order of directions for left/right turns
-    direction_order = ["N", "E", "S", "W"]
-
-    # Get the index of the current direction
-    current_index = direction_order.index(current_direction)
-
-    # Calculate new directions
-    forward = current_direction
-    left = direction_order[(current_index - 1) % 4]  # Turn left
-    right = direction_order[(current_index + 1) % 4]  # Turn right
-
-    # Return the directions and their (dx, dy) movements
-    return [
-        [forward, direction_map[forward]],
-        [left, direction_map[left]],
-        [right, direction_map[right]],
-    ]
-
-
-def direction_changed(dir1, dir2):
-    return dir1 != dir2
-
-
-def manhattan_distance_factor(coord, goal, manhatton_factor):
-    return manhatton_factor * (abs(coord.x - goal.x) + abs(coord.y - goal.y))
-
-
 def traverse(grid, manhatton_factor=0):
     start_coor = find_coordinates(grid, "S")[0]
     end_coor = find_coordinates(grid, "E")[0]
+    coordinates_with_dots = [
+        Coordinate(x=row_idx, y=col_idx)
+        for row_idx, row in enumerate(grid)
+        for col_idx, value in enumerate(row)
+        if value in [".", "S", "E"]
+    ]
+    path_cost = {
+        (coord, direction): float("inf")
+        for coord in coordinates_with_dots
+        for direction in direction_map.keys()
+    }
+    path_cost[(start_coor, "E")] = 0
     path = Path(Coordinate=start_coor, Cost=0, Direction="E")
     path_queue = []
 
@@ -76,28 +60,27 @@ def traverse(grid, manhatton_factor=0):
         if entry.Coordinate == end_coor:
             return entry.Cost
 
-        directions = get_valid_directions(entry.Direction)
-        for dir, (dx, dy) in directions:
-            neighbor = Coordinate(entry.Coordinate.x + dx, entry.Coordinate.y + dy)
-            if (
-                0 <= neighbor.x < len(grid)
-                and 0 <= neighbor.y < len(grid[0])  # Within bounds
-                and grid[neighbor.x][neighbor.y] != "#"  # And can move there
-            ):
-                cost_increase = 1001 if direction_changed(entry.Direction, dir) else 1
-                new_cost = entry.Cost + cost_increase
-                path = Path(neighbor, new_cost, dir)
-                heapq.heappush(
-                    path_queue,
-                    (
-                        new_cost
-                        + manhattan_distance_factor(
-                            neighbor, end_coor, manhatton_factor
-                        ),
-                        path,
-                    ),
-                    # Add a Manhattan factor so entries closer to end are more likely
-                )
+        # Add turns
+        for new_direction in turns[entry.Direction]:
+            new_cost = entry.Cost + 1000  # Add 1000 for turning
+            if new_cost > path_cost[(entry.Coordinate, new_direction)]:
+                continue
+
+            path_cost[(entry.Coordinate, new_direction)] = new_cost
+            path = Path(entry.Coordinate, new_cost, new_direction)
+            heapq.heappush(path_queue, (new_cost, path))
+
+        (dx, dy) = direction_map[entry.Direction]
+        neighbor = Coordinate(entry.Coordinate.x + dx, entry.Coordinate.y + dy)
+        new_cost = entry.Cost + 1  # Add 1 for moving
+        if (
+            neighbor not in coordinates_with_dots
+            or new_cost > path_cost[(neighbor, entry.Direction)]
+        ):
+            continue
+
+        path = Path(neighbor, new_cost, entry.Direction)
+        heapq.heappush(path_queue, (new_cost, path))
 
 
 def traverse_with_history(grid):
@@ -172,5 +155,5 @@ if __name__ == "__main__":
     assert traverse_with_history(grid) == 64
 
     grid = process_file("data.txt")
-    print("Part 1", traverse(grid, manhatton_factor=350))
+    print("Part 1", traverse(grid))
     print("Part 2", traverse_with_history(grid))  # 429 is too low
