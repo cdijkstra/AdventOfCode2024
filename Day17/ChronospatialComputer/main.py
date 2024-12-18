@@ -55,34 +55,56 @@ def process_instructions(instructions, registers):
     return result, registers
 
 
-def calculate_A_register(instructions, registers):
-    # Every time A is divided by 8 (thanks to (0,3)) and we know that it should be less than 8 in the less step.
-    possible_ranges = [range(0, 8), range(2, 4)]
-    for possible_range in possible_ranges:
-        print(possible_range)
-        for num in possible_range:
-            print(num)
-    return 1
-
-
-def find(program, ans):
-    print(program, ans)
-    if program == []:
-        return ans
+def calculate_A_register(instructions, flattened_instructions, ans):
+    print(flattened_instructions)
     for t in range(8):
-        a = ans << 3 | t  # This is where the magic happens
-        b = a % 8
-        b = b ^ 3
-        c = a // 2**b
-        a //= 2**3
-        b ^= a
-        b ^= c
-        if b % 8 == program[-1]:
-            print("Yup:", a)
-            sub = find(program[:-1], a)
-            if sub is None:
-                continue
-            return sub
+        a = ans << 3 | t
+        b = 0
+        c = 0
+        output = None
+        for opcode, operand in instructions:
+            if opcode == 0:
+                a //= 2 ** combo_operand(operand)
+            elif opcode == 1:
+                b ^= operand
+            elif opcode == 2:
+                b = combo_operand(operand) % 8
+            elif opcode == 4:
+                b = b ^ c
+            elif opcode == 5:
+                print(combo_operand(operand))
+                output = combo_operand(operand) % 8
+            elif opcode == 6:
+                b = a >> combo_operand(operand)
+            elif opcode == 7:
+                c = a >> combo_operand(operand)
+            print(output, flattened_instructions[-1])
+            if output == flattened_instructions[-1]:
+                print("Found it", output, a)
+                sub = calculate_A_register(instructions, flattened_instructions[:-1], a)
+                if sub is None:
+                    continue
+                return sub
+
+
+# def find(program, ans):
+#     print(program, ans)
+#     if program == []:
+#         return ans
+#     for t in range(8):
+#         a = ans << 3 | t  # This is where the magic happens
+#         b = a % 8
+#         b = b ^ 3
+#         c = a // 2**b
+#         a //= 2**3
+#         b ^= a
+#         b ^= c
+#         if b % 8 == program[-1]:
+#             print("Yup:", a)
+#             sub = find(program[:-1], a)
+#             if sub is None:
+#                 continue
+#             return sub
 
 
 def find_test(program, ans):
@@ -128,8 +150,8 @@ if __name__ == "__main__":
     # print("Part 1:", output)
 
     registers, instructions = process_file("data.txt")
-    all_instructions = [x for tup in instructions for x in tup]
-    output = find(all_instructions, 0)
+    flattened_instructions = [x for tup in instructions for x in tup]
+    output = calculate_A_register(instructions, flattened_instructions, 0)
     # 130812005036816 is too low
     # 130812005036818 is too low
     print("Part 2:", output)
