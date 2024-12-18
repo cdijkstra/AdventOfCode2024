@@ -6,11 +6,11 @@ Path = namedtuple("Path", ["Coordinate", "Cost"])
 directions = [(-1, 0), (1, 0), (0, -1), (0, 1)]
 
 
-def fill_grid(filename, width, falling_bytes):
+def fill_grid(filename, grid_size, falling_bytes):
     """Read the file and split into list."""
     with open(filename, "r") as file:
         falling_memory = [list(map(int, line.strip().split(","))) for line in file]
-        grid = [["." for _ in range(width)] for _ in range(width)]
+        grid = [["." for _ in range(grid_size)] for _ in range(grid_size)]
         for idx in range(falling_bytes):
             grid[falling_memory[idx][1]][falling_memory[idx][0]] = "#"
         return grid
@@ -21,11 +21,11 @@ def print_grid(grid):
         print(" ".join(row))
 
 
-def find_shortest_path(grid, width):
+def find_shortest_path(grid, grid_size):
     coordinates_with_dots = [
         Coordinate(x=col, y=row)
-        for row in range(width)
-        for col in range(width)
+        for row in range(grid_size)
+        for col in range(grid_size)
         if grid[row][col] == "."
     ]
     # Update the cost for the starting point
@@ -65,16 +65,78 @@ def find_shortest_path(grid, width):
             heapq.heappush(path_queue, (new_cost, neigbor_path))
 
     finished_path = next(
-        (path for path in paths if path.Coordinate == Coordinate(width - 1, width - 1)),
+        (
+            path
+            for path in paths
+            if path.Coordinate == Coordinate(grid_size - 1, grid_size - 1)
+        ),
         None,
     )
     return finished_path.Cost
+
+
+def find_blocking_byte(filename, grid_size):
+    with open(filename, "r") as file:
+        lines = file.readlines()
+        length = len(lines)
+
+    inf_found = False
+    idx = length // 5
+    while not inf_found:
+        grid = fill_grid(filename, grid_size, idx)
+        if find_shortest_path(grid, grid_size) == float("inf"):
+            inf_found = True
+        else:
+            idx += length // 5
+    idx -= length // 5
+
+    inf_found = False
+    while not inf_found:
+        grid = fill_grid(filename, grid_size, idx)
+        if find_shortest_path(grid, grid_size) == float("inf"):
+            inf_found = True
+        else:
+            idx += length // 5**2
+    idx -= length // 5**2
+
+    if length >= 500:
+        inf_found = False
+        while not inf_found:
+            grid = fill_grid(filename, grid_size, idx)
+            if find_shortest_path(grid, grid_size) == float("inf"):
+                inf_found = True
+            else:
+                idx += length // 5**3
+        idx -= length // 5**3
+
+    if length >= 2500:
+        inf_found = False
+        while not inf_found:
+            grid = fill_grid(filename, grid_size, idx)
+            if find_shortest_path(grid, grid_size) == float("inf"):
+                inf_found = True
+            else:
+                idx += length // 5**4
+        idx -= length // 5**4
+
+    inf_found = False
+    # Now go one by one
+    while not inf_found:
+        grid = fill_grid(filename, grid_size, idx)
+        if find_shortest_path(grid, grid_size) == float("inf"):
+            inf_found = True
+        else:
+            idx += 1
+
+    return lines[idx - 1].strip()
 
 
 # Main execution
 if __name__ == "__main__":
     grid = fill_grid("dummydata.txt", 7, 12)
     assert find_shortest_path(grid, 7) == 22
+    assert find_blocking_byte("dummydata.txt", 7) == "6,1"
 
     grid = fill_grid("data.txt", 71, 1024)
     print("Part 1", find_shortest_path(grid, 71))
+    print("Part 2", find_blocking_byte("data.txt", 71))
