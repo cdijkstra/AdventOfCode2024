@@ -2,7 +2,6 @@ import heapq
 from collections import namedtuple
 
 Coordinate = namedtuple("Coordinate", ["x", "y"])
-Path = namedtuple("Path", ["Coordinate", "Cost"])
 directions = [(-1, 0), (1, 0), (0, -1), (0, 1)]
 
 
@@ -28,51 +27,34 @@ def find_shortest_path(grid, grid_size):
         for col in range(grid_size)
         if grid[row][col] == "."
     ]
-    # Update the cost for the starting point
-    paths = [
-        Path(Coordinate=coord, Cost=0 if coord == Coordinate(0, 0) else float("inf"))
-        for coord in coordinates_with_dots
-    ]
-    path = next((path for path in paths if path.Coordinate == Coordinate(0, 0)), None)
+    path_cost = {}
+    for row in range(grid_size):
+        for col in range(grid_size):
+            if grid[row][col] == ".":
+                coord = Coordinate(x=col, y=row)
+                coordinates_with_dots.append(coord)
+                # Initialize each path with infinite cost, except for the start point
+                path_cost[coord] = 0 if coord == Coordinate(0, 0) else float("inf")
 
-    # Use a priority queue with Cost as key
+    path = Coordinate(x=0, y=0)
+
     path_queue = []
-    heapq.heappush(path_queue, (path.Cost, path))
+    heapq.heappush(path_queue, (path_cost[path], path))
     while path_queue:
         entry = heapq.heappop(path_queue)[1]
         for dx, dy in directions:
-            neighbor = Coordinate(entry.Coordinate.x + dx, entry.Coordinate.y + dy)
+            neighbor = Coordinate(entry.x + dx, entry.y + dy)
             if neighbor not in coordinates_with_dots:
                 continue
 
-            new_cost = entry.Cost + 1
-            neigbor_path = next(
-                (
-                    path
-                    for path in paths
-                    if path.Coordinate == Coordinate(neighbor.x, neighbor.y)
-                ),
-                None,
-            )
-            if neigbor_path.Cost <= new_cost:
+            new_cost = path_cost[entry] + 1
+            if path_cost[neighbor] <= new_cost:
                 continue
 
-            neigbor_path = Path(Coordinate=neigbor_path.Coordinate, Cost=new_cost)
-            paths = [
-                (neigbor_path if path.Coordinate == neighbor else path)
-                for path in paths
-            ]
-            heapq.heappush(path_queue, (new_cost, neigbor_path))
+            path_cost[neighbor] = new_cost
+            heapq.heappush(path_queue, (new_cost, neighbor))
 
-    finished_path = next(
-        (
-            path
-            for path in paths
-            if path.Coordinate == Coordinate(grid_size - 1, grid_size - 1)
-        ),
-        None,
-    )
-    return finished_path.Cost
+    return path_cost[Coordinate(grid_size - 1, grid_size - 1)]
 
 
 def find_blocking_byte(filename, grid_size):
@@ -93,11 +75,9 @@ def find_blocking_byte(filename, grid_size):
         return idx
 
     idx = length // 5
-    # First block search with length // 5 step size, then 5**2
+    # First block search with length // 5 step size, then 5**2. Then Make more fine-grained for larger data-sets
     idx = find_idx_step(idx, length // 5)
     idx = find_idx_step(idx, length // 5**2)
-
-    # Make more fine-grained for larger data-sets
     if length >= 500:
         idx = find_idx_step(idx, length // 5**3)
         if length >= 2500:
