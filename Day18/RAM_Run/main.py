@@ -80,55 +80,31 @@ def find_blocking_byte(filename, grid_size):
         lines = file.readlines()
         length = len(lines)
 
-    inf_found = False
+    def find_idx_step(idx, step_size):
+        """Helper function to find the index using a step size."""
+        inf_found = False
+        while not inf_found:
+            grid = fill_grid(filename, grid_size, idx)
+            if find_shortest_path(grid, grid_size) == float("inf"):
+                inf_found = True
+            else:
+                idx += step_size
+        idx -= step_size  # We know its in between this idx and idx + step_size
+        return idx
+
     idx = length // 5
-    while not inf_found:
-        grid = fill_grid(filename, grid_size, idx)
-        if find_shortest_path(grid, grid_size) == float("inf"):
-            inf_found = True
-        else:
-            idx += length // 5
-    idx -= length // 5
+    # First block search with length // 5 step size, then 5**2
+    idx = find_idx_step(idx, length // 5)
+    idx = find_idx_step(idx, length // 5**2)
 
-    inf_found = False
-    while not inf_found:
-        grid = fill_grid(filename, grid_size, idx)
-        if find_shortest_path(grid, grid_size) == float("inf"):
-            inf_found = True
-        else:
-            idx += length // 5**2
-    idx -= length // 5**2
-
+    # Make more fine-grained for larger data-sets
     if length >= 500:
-        inf_found = False
-        while not inf_found:
-            grid = fill_grid(filename, grid_size, idx)
-            if find_shortest_path(grid, grid_size) == float("inf"):
-                inf_found = True
-            else:
-                idx += length // 5**3
-        idx -= length // 5**3
+        idx = find_idx_step(idx, length // 5**3)
+        if length >= 2500:
+            idx = find_idx_step(idx, length // 5**4)
 
-    if length >= 2500:
-        inf_found = False
-        while not inf_found:
-            grid = fill_grid(filename, grid_size, idx)
-            if find_shortest_path(grid, grid_size) == float("inf"):
-                inf_found = True
-            else:
-                idx += length // 5**4
-        idx -= length // 5**4
-
-    inf_found = False
-    # Now go one by one
-    while not inf_found:
-        grid = fill_grid(filename, grid_size, idx)
-        if find_shortest_path(grid, grid_size) == float("inf"):
-            inf_found = True
-        else:
-            idx += 1
-
-    return lines[idx - 1].strip()
+    idx = find_idx_step(idx, 1)
+    return lines[idx].strip()
 
 
 # Main execution
