@@ -13,23 +13,20 @@ def process_file(filename):
         return registers, instruction
 
 
-def combo_operand(operand):
-    if 0 <= operand <= 3:
-        return operand
-    if 4 <= operand <= 6:
-        return registers[operand - 4]
-    else:
-        raise RuntimeError("This operand should not occur", operand)
-
-
 def process_instructions(instructions, registers):
     idx = 0
-
     output = []
-    print(registers)
+
+    def combo_operand(operand):
+        if 0 <= operand <= 3:
+            return operand
+        if 4 <= operand <= 6:
+            return registers[operand - 4]
+        else:
+            raise RuntimeError("This operand should not occur", operand)
+
     while idx < len(instructions):
         opcode, operand = instructions[idx]
-        print(opcode, operand)
         if opcode == 0:
             registers[0] //= 2 ** combo_operand(operand)
         elif opcode == 1:
@@ -41,107 +38,31 @@ def process_instructions(instructions, registers):
         elif opcode == 4:
             registers[1] ^= registers[2]
         elif opcode == 5:
-            print(combo_operand(operand))
             output.append(combo_operand(operand) % 8)
         elif opcode == 6:
             registers[1] = registers[0] // 2 ** combo_operand(operand)
         elif opcode == 7:
             registers[2] = registers[0] // 2 ** combo_operand(operand)
         idx += 1
-        print(registers)
 
     result = ",".join(map(str, output))
-    print(registers)
     return result, registers
 
 
-def calculate_A_register(instructions, flattened_instructions, ans):
-    print(instructions, flattened_instructions)
-    print(flattened_instructions)
-    for t in range(8):
-        a = (ans << 3) + t
-        b = 0
-        c = 0
-
-        def get_combo_operand(operand):
-            if 0 <= operand <= 3:
-                return operand
-            if operand == 4:
-                return a
-            if operand == 5:
-                return b
-            if operand == 6:
-                return c
-            else:
-                raise RuntimeError("This operand should not occur", operand)
-
-        output = None
-        for opcode, operand in instructions:
-            if opcode == 0:
-                a = a >> get_combo_operand(operand)
-            elif opcode == 1:
-                b = b ^ operand
-            elif opcode == 2:
-                b = get_combo_operand(operand) % 8
-            elif opcode == 4:
-                b = b ^ c
-            elif opcode == 5:
-                output = get_combo_operand(operand) % 8
-            elif opcode == 6:
-                b = a >> get_combo_operand(operand)
-            elif opcode == 7:
-                c = a >> get_combo_operand(operand)
-        print("Output = ", output, "Should be", flattened_instructions[-1])
-        if output == flattened_instructions[-1]:
-            print("Found it", output, a)
-            sub = calculate_A_register(instructions, flattened_instructions[:-1], a)
-            if sub is None:
-                continue
-            return sub
-
-
-def find(program, ans):
-    print(program, ans)
-    if program == []:
-        return ans
-    for t in range(8):
-        a = (ans << 3) + t  # This is where the magic happens
-        b = a % 8
-        b = b ^ 3
-        c = a // 2**b
-        a //= 2**3
-        b ^= a
-        b ^= c
-        if b % 8 == program[-1]:
-            print("Yup:", a)
-            sub = find(program[:-1], a)
-            if sub is None:
-                continue
-            return sub
-
-
-def find_test(program, ans):
-    if program == []:
-        return ans * 8
-    for t in range(8):
-        a = ans << 3 | t  # This is where the magic happens
-        if a % 8 == program[-1]:
-            sub = find_test(program[:-1], a)
-            if sub is None:
-                continue
-            return sub
-
-
-def solve2(program):
+def calculate_A_register(program):
     candidates = [0]
-    for l in range(len(program)):
+    count = 0
+    for expected_output in program[::-1]:
         next_candidates = []
         for val in candidates:
             for i in range(8):
                 target = (val << 3) + i
-                if computer(program, target) == program[-l - 1 :]:
+                output = computer(program, a=target)
+                if output == expected_output:
                     next_candidates.append(target)
+        count += 1
         candidates = next_candidates
+    return min(candidates)
 
 
 def computer(program, a: int, b: int = 0, c: int = 0) -> list[int]:
@@ -195,24 +116,10 @@ if __name__ == "__main__":
     output, registers = process_instructions(instructions, registers)
     assert registers[1] == 44354
 
-    registers, instructions = process_file("dummydata_copy.txt")
-    all_instructions = [x for tup in instructions for x in tup]
-    print(all_instructions)
-    assert find_test(all_instructions, 0) == 117440
-
-    # registers, instructions = process_file("data.txt")
-    # output, registers = process_instructions(instructions, registers)
-    # print("Part 1:", output)
-
-    # registers, instructions = process_file("data.txt")
-    # flattened_instructions = [x for tup in instructions for x in tup]
-    # output = find_test(instructions, 0)
-    # print("Part 2:", output)
-
     registers, instructions = process_file("data.txt")
     flattened_instructions = [x for tup in instructions for x in tup]
-    print(flattened_instructions)
-    # output = solve2(flattened_instructions)
-    # # 130812005036816 is too low
-    # # 130812005036818 is too low
-    # print("Part 2:", output)
+    output, registers = process_instructions(instructions, registers)
+    print("Part 1:", output)
+
+    output = calculate_A_register(flattened_instructions)
+    print("Part 2:", output)
