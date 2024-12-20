@@ -96,6 +96,59 @@ def find_cheat_path_length(allowed_cheats=2, min_time_save=0):
     return sum(1 for s in times_saved if s >= min_time_save)
 
 
+def find_cheat_path_length2(allowed_cheats=2, min_time_save=0):
+    path_lengths_from_start, path_lengths_to_end = find_path_lengths()
+    lengths = []
+    times_saved = []
+    normal_length = path_lengths_from_start[find_coordinates(grid, "E")[0]]
+    print(normal_length)
+
+    for candidate in path:
+        for dx, dy in directions:
+            neighbor = Coordinate(candidate.x + dx, candidate.y + dy)
+            if grid[neighbor.x][neighbor.y] != "#":
+                continue
+
+            for skip_wall_number in range(1, allowed_cheats + 1):
+                tunnel = []
+                coord_after_cheat = Coordinate(
+                    candidate.x + (skip_wall_number) * dx,
+                    candidate.y + (skip_wall_number) * dy,
+                )
+
+                print("Before", candidate, "After", coord_after_cheat)
+                for t in range(1, skip_wall_number + 1):
+                    print(t)
+                    new_x = candidate.x + (1 + t) * dx
+                    new_y = candidate.y + (1 + t) * dy
+                    if 0 <= new_x < len(grid) and 0 <= new_y < len(grid[0]):
+                        tunnel.append(grid[new_x][new_y])
+
+                print(
+                    coord_after_cheat,
+                    tunnel,
+                    all(entry == "#" for entry in tunnel),
+                    coord_after_cheat in path,
+                )
+                if not len(tunnel) == skip_wall_number:
+                    continue
+
+                if all(entry == "#" for entry in tunnel) and coord_after_cheat in path:
+                    length = (
+                        path_lengths_from_start[candidate]
+                        + path_lengths_to_end[coord_after_cheat]
+                        + len(tunnel)
+                    )
+                    lengths.append(length)
+                    time_saved = normal_length - length
+                    print("hello")
+                    if time_saved > 0:
+                        times_saved.append(time_saved)
+
+    print("Time saved", times_saved)
+    return sum(1 for s in times_saved if s >= min_time_save)
+
+
 # Main execution
 if __name__ == "__main__":
     grid = process_file("dummydata.txt")
@@ -103,9 +156,10 @@ if __name__ == "__main__":
     end_coords = find_coordinates(grid, "E")[0]
     path = find_coordinates(grid, ".") + [start_coords, end_coords]
 
-    assert find_cheat_path_length() == 44
+    assert find_cheat_path_length2() == 44
     grid = process_file("data.txt")
     start_coords = find_coordinates(grid, "S")[0]
     end_coords = find_coordinates(grid, "E")[0]
     path = find_coordinates(grid, ".") + [start_coords, end_coords]
     print("Part 1", find_cheat_path_length(100))
+    # print("Part 12", find_cheat_path_length(100))
