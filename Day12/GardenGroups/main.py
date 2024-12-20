@@ -102,23 +102,45 @@ def bulk(grid):
             for idx, group in enumerate(groups):
                 flower += str(idx)
                 flower_dict[flower] = [len(group)]
-                borders = find_border_coordinates(group, flower)
-                # print("Found borders", borders, " for", flower, group)
+                borders = find_border_coordinates(group)
+                find_turns(borders, group)
+
         else:
             flower_dict[flower] = [count_flowers(grid, flower)]
             # Find border coordinates
-            borders = find_loop(groups[0], flower)
-            print("Found loop", borders, " for", flower, groups[0])
-            starting_point = borders[0]
+            borders = find_border_coordinates(group)
+            find_turns(borders, group)
 
     return sum(reduce(lambda x, y: x * y, group, 1) for group in flower_dict.values())
 
 
-def find_border_coordinates(coordinates: List[Coordinate], flower):
+def find_turns(borders, coordinates):
+    area_around_border = []
+    for border in borders:
+        for dx, dy in directions:
+            neighbor = Coordinate(border.x + dx, border.y + dy)
+            if neighbor in coordinates:
+                continue
+            area_around_border.append(neighbor)
+    area_around_border = list(set(area_around_border))
+    entry = random.choice(area_around_border)
+    visited = [entry]
+
+    print(sorted(area_around_border))
+    while len(visited) < len(area_around_border):
+        for dx, dy in directions:
+            neighbor = Coordinate(entry.x + dx, entry.y + dy)
+            if neighbor in visited or neighbor not in area_around_border:
+                continue
+            visited.append(neighbor)
+            entry = neighbor
+    print(visited)
+
+
+def find_border_coordinates(coordinates: List[Coordinate]):
     valid_coordinates = []
     for coord in coordinates:
         has_valid_neighbor = False
-        print(coord)
         for dx, dy in directions:
             neighbor = Coordinate(coord.x + dx, coord.y + dy)
             if neighbor not in coordinates:
@@ -129,20 +151,6 @@ def find_border_coordinates(coordinates: List[Coordinate], flower):
             valid_coordinates.append(coord)
 
     return valid_coordinates
-
-
-def find_loop(coordinates: List[Coordinate], flower):
-    loop = []
-    for coord in coordinates:
-        has_valid_neighbor = False
-        print(coord)
-        for dx, dy in directions:
-            neighbor = Coordinate(coord.x + dx, coord.y + dy)
-            if neighbor in coordinates:
-                continue
-            loop.append(neighbor)
-
-    return sorted(loop)
 
 
 # Main execution
