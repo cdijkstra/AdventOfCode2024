@@ -23,6 +23,9 @@ def find_coordinates(grid, character):
 
 
 def find_path_lengths():
+    start_coords = find_coordinates(grid, "S")[0]
+    end_coords = find_coordinates(grid, "E")[0]
+    path = find_coordinates(grid, ".") + [start_coords, end_coords]
     # Traverse through maze normally, so we know the distance to the end from all points
     path_lengths_from_start = {}
     path_lengths_to_end = {}
@@ -58,36 +61,44 @@ def find_path_lengths():
 
 
 def find_cheat_path_length(allowed_cheats=2, min_time_save=0):
+    start_coords = find_coordinates(grid, "S")[0]
+    end_coords = find_coordinates(grid, "E")[0]
+    path = find_coordinates(grid, ".") + [start_coords, end_coords]
+    walls = find_coordinates(grid, "#")
+
     path_lengths_from_start, path_lengths_to_end = find_path_lengths()
     lengths = []
     times_saved = []
-    normal_length = path_lengths_from_start[find_coordinates(grid, "E")[0]]
-    print(normal_length)
+    normal_length = path_lengths_from_start[end_coords]
+    start_end_tunnels = []
 
     for candidate in path:
-        for dx, dy in directions:
-
-            tunnel = []
-            for cheat in range(1, allowed_cheats + 1):
-                newx = candidate.x + cheat * dx
-                newy = candidate.y + cheat * dy
-                neighbor = Coordinate(newx, newy)
-                if not (0 <= newx < len(grid) and 0 <= newy < len(grid[0])):
-                    continue
-
-                tunnel.append(grid[neighbor.x][neighbor.y])
-                if any(entry != "#" for entry in tunnel):
-                    continue
-
-                entry_after_tunnel = Coordinate(
-                    candidate.x + (cheat + 1) * dx, candidate.y + (cheat + 1) * dy
-                )
-                if entry_after_tunnel in path:
+        q = queue.Queue()
+        tunnel = []
+        q.put((candidate, candidate, tunnel))
+        while q.qsize() > 0:
+            start, candidate, tunnel = q.get()
+            for dx, dy in directions:
+                neighbor = Coordinate(candidate.x + dx, candidate.y + dy)
+                if (
+                    neighbor in walls
+                    and neighbor not in tunnel
+                    and len(tunnel) < allowed_cheats - 1
+                ):
+                    q.put((start, neighbor, tunnel + [neighbor]))
+                elif (
+                    neighbor in path
+                    and (start, neighbor) not in start_end_tunnels
+                    and start != neighbor
+                    and 0 < len(tunnel) < allowed_cheats
+                ):
+                    # print("dug tunnel from", start, "to", neighbor, "tunnel=", tunnel)
+                    start_end_tunnels.append((start, neighbor))
                     length = (
-                        path_lengths_from_start[candidate]
-                        + path_lengths_to_end[entry_after_tunnel]
+                        path_lengths_from_start[start]
                         + len(tunnel)
                         + 1
+                        + path_lengths_to_end[neighbor]
                     )
                     lengths.append(length)
                     time_saved = normal_length - length
@@ -101,15 +112,8 @@ def find_cheat_path_length(allowed_cheats=2, min_time_save=0):
 # Main execution
 if __name__ == "__main__":
     grid = process_file("dummydata.txt")
-    start_coords = find_coordinates(grid, "S")[0]
-    end_coords = find_coordinates(grid, "E")[0]
-    path = find_coordinates(grid, ".") + [start_coords, end_coords]
-
     assert find_cheat_path_length() == 44
-    assert find_cheat_path_length(20, 50) == 44
+    # assert find_cheat_path_length(20, 50) == 44
     grid = process_file("data.txt")
-    start_coords = find_coordinates(grid, "S")[0]
-    end_coords = find_coordinates(grid, "E")[0]
-    path = find_coordinates(grid, ".") + [start_coords, end_coords]
-    print("Part 1", find_cheat_path_length(100))
-    # print("Part 12", find_cheat_path_length(100))
+    print("Part 1", find_cheat_path_length(2, 100))
+    print("Part 12", find_cheat_path_length(20, 100))
