@@ -1,4 +1,3 @@
-import queue
 import re
 from collections import namedtuple
 from copy import deepcopy
@@ -48,83 +47,90 @@ directional_positions = {
 
 
 def get_all_routes(sequence):
-    all_instructions = []
-    generate_routes(sequence, deepcopy(numpad_positions["A"]), "", all_instructions)
-    return all_instructions
+    instructions = generate_routes(sequence, deepcopy(numpad_positions["A"]))
+    return instructions
 
 
-def generate_routes(sequence, position, current_instruction, all_instructions):
+def generate_routes(sequence, position, instructions=[""]):
     if not sequence:
         # Base case: If no more characters in the sequence, add the current instruction to the list
-        all_instructions.append(current_instruction)
-        return all_instructions
+        return instructions
+
+    next_position = numpad_positions[sequence[0]]
 
     current_position = deepcopy(position)
-    char = sequence[0]
-    next_position = numpad_positions[char]
-
+    print("1 current pos", current_position, next_position)
+    new_instructions = []
     # Option 1: Move x first, then y
-    x_first = []
-    while current_position.x != next_position.x:
-        if next_position.x < current_position.x:
-            x_first.append("^")
-            current_position.x -= 1
+    x_first = ""
+    if not (current_position.y == 0 and next_position.x == 3):
+        while current_position.x != next_position.x:
+            if next_position.x < current_position.x:
+                x_first += "^"
+                current_position.x -= 1
+            else:
+                x_first += "v"
+                current_position.x += 1
+        while current_position.y != next_position.y:
+            if next_position.y > current_position.y:
+                x_first += ">"
+                current_position.y += 1
+            else:
+                x_first += "<"
+                current_position.y -= 1
+        x_first += "A"
+        print("x_first", x_first)
+        if not instructions or instructions == [""]:
+            new_instructions.append(x_first)
         else:
-            x_first.append("v")
-            current_position.x += 1
-    while current_position.y != next_position.y:
-        if next_position.y > current_position.y:
-            x_first.append(">")
-            current_position.y += 1
-        else:
-            x_first.append("<")
-            current_position.y -= 1
-    x_first.append("A")
+            for instruction in instructions:
+                new_instructions.append(instruction + x_first)
 
     # Save the position before modifying for option 2 (y-first)
     current_position = deepcopy(position)
+    print("2 current pos", current_position, next_position)
 
     # Option 2: Move y first, then x
-    y_first = []
-    while current_position.y != next_position.y:
-        if next_position.y > current_position.y:
-            y_first.append(">")
-            current_position.y += 1
+    y_first = ""
+    if not (current_position.x == 3 and next_position.y == 0):
+        while current_position.y != next_position.y:
+            if next_position.y > current_position.y:
+                y_first += ">"
+                current_position.y += 1
+            else:
+                y_first += "<"
+                current_position.y -= 1
+        while current_position.x != next_position.x:
+            if next_position.x < current_position.x:
+                y_first += "^"
+                current_position.x -= 1
+            else:
+                y_first += "v"
+                current_position.x += 1
+        y_first += "A"
+        print("y_first", y_first)
+        if not instructions or instructions == [""]:
+            new_instructions.append(y_first)
         else:
-            y_first.append("<")
-            current_position.y -= 1
-    while current_position.x != next_position.x:
-        if next_position.x < current_position.x:
-            y_first.append("^")
-            current_position.x -= 1
-        else:
-            y_first.append("v")
-            current_position.x += 1
-    y_first.append("A")
+            for instruction in instructions:
+                new_instructions.append(instruction + y_first)
 
+    instructions = new_instructions
+    print("Current instructions", instructions)
     # Recurse with both options (x-first and y-first) and the remaining sequence
-    generate_routes(
+    return generate_routes(
         sequence[1:],
         deepcopy(next_position),
-        current_instruction + "".join(x_first),
-        all_instructions,
-    )
-
-    generate_routes(
-        sequence[1:],
-        deepcopy(next_position),
-        current_instruction + "".join(y_first),
-        all_instructions,
+        instructions,
     )
 
 
-def calculate_length(sequences):
+def calculate_length(sequences, num_robots):
     instructions = []
     # Numpad instructions
     for sequence in sequences:
         routes = get_all_routes(sequence)
-        print(routes)
-        for extra_robots in range(2):
+        for extra_robots in range(num_robots):
             for i, instruction in enumerate(routes):
                 # Directional instructions
                 new_instruction = ""
@@ -139,7 +145,6 @@ def calculate_length(sequences):
                             new_instruction += "^"
                             position.x -= 1
                     while position.y != next_position.y:
-                        print(position, next_position)
                         if next_position.y > position.y:
                             new_instruction += ">"
                             position.y += 1
@@ -147,7 +152,6 @@ def calculate_length(sequences):
                             new_instruction += "<"
                             position.y -= 1
                     new_instruction += "A"
-                print(f"Robot  {extra_robots} with {instruction}")
                 routes[i] = new_instruction
         instructions.append(routes)
         # Replace entry by new_instruction in array
@@ -165,7 +169,6 @@ def calculate_length(sequences):
 # Main execution
 if __name__ == "__main__":
     sequences = process_file("dummydata.txt")
-    print(calculate_length(sequences))
-    # sequences = process_file("data.txt")
-    # print("Part 1:", calculate_length(sequences))
-    # 160800 is too high
+    assert calculate_length(sequences, num_robots=2) == 126384
+    sequences = process_file("data.txt")
+    print("Part 1:", calculate_length(sequences, num_robots=2))
