@@ -141,11 +141,10 @@ def calculate_length(sequences):
                     instruction += "<"
                     position.y -= 1
             instruction += "A"
-        instructions.append(instruction)
+        print("Robot 0", instruction)
 
-    for extra_robots in range(2):
-        # Directional instructions
-        for i, instruction in enumerate(instructions):  # Iterate with index
+        for extra_robots in range(2):
+            # Directional instructions
             new_instruction = ""
             position = deepcopy(directional_positions["A"])
             for char in instruction:
@@ -166,10 +165,13 @@ def calculate_length(sequences):
                         new_instruction += "<"
                         position.y -= 1
                 new_instruction += "A"
-            instructions[i] = new_instruction
-            # Replace entry by new_instruction in array
+            print(f"Robot  {extra_robots} with {instruction}")
+            instruction = new_instruction
+        instructions.append(instruction)
+        print(instruction)
+        # Replace entry by new_instruction in array
 
-    print(instructions)
+    print("Instruction = ", instructions)
     total_complexity = 0
     for sequence, instruction in zip(sequences, instructions):
         sequence_len = int(re.search(r"\d+", sequence).group())
@@ -182,9 +184,7 @@ def calculate_length(sequences):
 # Main execution
 if __name__ == "__main__":
     sequences = process_file("dummydata.txt")
-    for sequence in sequences:
-        print(get_all_routes(sequence))
-    # print(calculate_length(sequences))
+    print(calculate_length(sequences))
     # sequences = process_file("data.txt")
     # print("Part 1:", calculate_length(sequences))
     # 160800 is too high
