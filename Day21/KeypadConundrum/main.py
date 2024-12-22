@@ -47,6 +47,77 @@ directional_positions = {
 }
 
 
+def get_all_routes(sequence):
+    all_instructions = []
+    generate_routes(sequence, deepcopy(numpad_positions["A"]), "", all_instructions)
+    return all_instructions
+
+
+def generate_routes(sequence, position, current_instruction, all_instructions):
+    if not sequence:
+        # Base case: If no more characters in the sequence, add the current instruction to the list
+        all_instructions.append(current_instruction)
+        return all_instructions
+
+    current_position = deepcopy(position)
+    char = sequence[0]
+    next_position = numpad_positions[char]
+
+    # Option 1: Move x first, then y
+    x_first = []
+    while current_position.x != next_position.x:
+        if next_position.x < current_position.x:
+            x_first.append("^")
+            current_position.x -= 1
+        else:
+            x_first.append("v")
+            current_position.x += 1
+    while current_position.y != next_position.y:
+        if next_position.y > current_position.y:
+            x_first.append(">")
+            current_position.y += 1
+        else:
+            x_first.append("<")
+            current_position.y -= 1
+    x_first.append("A")
+
+    # Save the position before modifying for option 2 (y-first)
+    current_position = deepcopy(position)
+
+    # Option 2: Move y first, then x
+    y_first = []
+    while current_position.y != next_position.y:
+        if next_position.y > current_position.y:
+            y_first.append(">")
+            current_position.y += 1
+        else:
+            y_first.append("<")
+            current_position.y -= 1
+    while current_position.x != next_position.x:
+        if next_position.x < current_position.x:
+            y_first.append("^")
+            current_position.x -= 1
+        else:
+            y_first.append("v")
+            current_position.x += 1
+    y_first.append("A")
+
+    # Recurse with both options (x-first and y-first) and the remaining sequence
+    generate_routes(
+        sequence[1:],
+        deepcopy(next_position),
+        current_instruction + "".join(x_first),
+        all_instructions,
+    )
+
+    generate_routes(
+        sequence[1:],
+        deepcopy(next_position),
+        current_instruction + "".join(y_first),
+        all_instructions,
+    )
+
+
 def calculate_length(sequences):
     instructions = []
     # Numpad instructions
@@ -111,6 +182,9 @@ def calculate_length(sequences):
 # Main execution
 if __name__ == "__main__":
     sequences = process_file("dummydata.txt")
-    sequences = process_file("data.txt")
-    print("Part 1:", calculate_length(sequences))
+    for sequence in sequences:
+        print(get_all_routes(sequence))
+    # print(calculate_length(sequences))
+    # sequences = process_file("data.txt")
+    # print("Part 1:", calculate_length(sequences))
     # 160800 is too high
