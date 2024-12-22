@@ -122,60 +122,41 @@ def calculate_length(sequences):
     instructions = []
     # Numpad instructions
     for sequence in sequences:
-        instruction = ""
-        position = deepcopy(numpad_positions["A"])
-        for char in sequence:
-            next_position = numpad_positions[char]
-            while position.x != next_position.x:
-                if next_position.x < position.x:
-                    instruction += "^"
-                    position.x -= 1
-                else:
-                    instruction += "v"
-                    position.x += 1
-            while position.y != next_position.y:
-                if next_position.y > position.y:
-                    instruction += ">"
-                    position.y += 1
-                else:
-                    instruction += "<"
-                    position.y -= 1
-            instruction += "A"
-        print("Robot 0", instruction)
-
+        routes = get_all_routes(sequence)
+        print(routes)
         for extra_robots in range(2):
-            # Directional instructions
-            new_instruction = ""
-            position = deepcopy(directional_positions["A"])
-            for char in instruction:
-                next_position = directional_positions[char]
-                while position.x != next_position.x:
-                    if next_position.x > position.x:
-                        new_instruction += "v"
-                        position.x += 1
-                    else:
-                        new_instruction += "^"
-                        position.x -= 1
-                while position.y != next_position.y:
-                    print(position, next_position)
-                    if next_position.y > position.y:
-                        new_instruction += ">"
-                        position.y += 1
-                    else:
-                        new_instruction += "<"
-                        position.y -= 1
-                new_instruction += "A"
-            print(f"Robot  {extra_robots} with {instruction}")
-            instruction = new_instruction
-        instructions.append(instruction)
-        print(instruction)
+            for i, instruction in enumerate(routes):
+                # Directional instructions
+                new_instruction = ""
+                position = deepcopy(directional_positions["A"])
+                for char in instruction:
+                    next_position = directional_positions[char]
+                    while position.x != next_position.x:
+                        if next_position.x > position.x:
+                            new_instruction += "v"
+                            position.x += 1
+                        else:
+                            new_instruction += "^"
+                            position.x -= 1
+                    while position.y != next_position.y:
+                        print(position, next_position)
+                        if next_position.y > position.y:
+                            new_instruction += ">"
+                            position.y += 1
+                        else:
+                            new_instruction += "<"
+                            position.y -= 1
+                    new_instruction += "A"
+                print(f"Robot  {extra_robots} with {instruction}")
+                routes[i] = new_instruction
+        instructions.append(routes)
         # Replace entry by new_instruction in array
 
-    print("Instruction = ", instructions)
+    print("Instructions = ", instructions)
     total_complexity = 0
     for sequence, instruction in zip(sequences, instructions):
         sequence_len = int(re.search(r"\d+", sequence).group())
-        path_len = len(instruction)
+        path_len = len(min(instruction, key=len))
         print(sequence_len, path_len)
         total_complexity += sequence_len * path_len
     return total_complexity
