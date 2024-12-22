@@ -128,6 +128,7 @@ def generate_routes(sequence, position, instructions=[""]):
 def calculate_length(sequences, num_robots):
     instructions = []
     # Numpad instructions
+    string_memory = {}
     for sequence in sequences:
         routes = get_all_routes(sequence)
         for extra_robots in range(num_robots):
@@ -136,27 +137,33 @@ def calculate_length(sequences, num_robots):
                 new_instruction = ""
                 position = deepcopy(directional_positions["A"])
                 for char in instruction:
-                    next_position = directional_positions[char]
-                    while position.x != next_position.x:
-                        if next_position.x > position.x:
-                            new_instruction += "v"
-                            position.x += 1
-                        else:
-                            new_instruction += "^"
-                            position.x -= 1
-                    while position.y != next_position.y:
-                        if next_position.y > position.y:
-                            new_instruction += ">"
-                            position.y += 1
-                        else:
-                            new_instruction += "<"
-                            position.y -= 1
-                    new_instruction += "A"
+                    instruction = ""
+                    if (position, char) in string_memory:
+                        instruction = string_memory[(position, char)]
+                        position = next_position
+                    else:
+                        next_position = directional_positions[char]
+                        while position.x != next_position.x:
+                            if next_position.x > position.x:
+                                instruction += "v"
+                                position.x += 1
+                            else:
+                                instruction += "^"
+                                position.x -= 1
+                        while position.y != next_position.y:
+                            if next_position.y > position.y:
+                                instruction += ">"
+                                position.y += 1
+                            else:
+                                instruction += "<"
+                                position.y -= 1
+                        instruction += "A"
+                    # string_memory[(position, char)] = instruction
+                    new_instruction += instruction
                 routes[i] = new_instruction
         instructions.append(routes)
         # Replace entry by new_instruction in array
 
-    print("Instructions = ", instructions)
     total_complexity = 0
     for sequence, instruction in zip(sequences, instructions):
         sequence_len = int(re.search(r"\d+", sequence).group())
@@ -172,3 +179,4 @@ if __name__ == "__main__":
     assert calculate_length(sequences, num_robots=2) == 126384
     sequences = process_file("data.txt")
     print("Part 1:", calculate_length(sequences, num_robots=2))
+    print("Part 2:", calculate_length(sequences, num_robots=25))
