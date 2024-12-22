@@ -46,10 +46,8 @@ directional_positions = {
     ">": Coordinate(x=1, y=2),
 }
 
-# Main execution
-if __name__ == "__main__":
-    sequences = process_file("dummydata.txt")
 
+def calculate_length(sequences):
     instructions = []
     # Numpad instructions
     for sequence in sequences:
@@ -57,14 +55,6 @@ if __name__ == "__main__":
         position = deepcopy(numpad_positions["A"])
         for char in sequence:
             next_position = numpad_positions[char]
-            while position.y != next_position.y:
-                print(position, next_position)
-                if next_position.y > position.y:
-                    instruction += ">"
-                    position.y += 1
-                else:
-                    instruction += "<"
-                    position.y -= 1
             while position.x != next_position.x:
                 if next_position.x < position.x:
                     instruction += "^"
@@ -72,6 +62,13 @@ if __name__ == "__main__":
                 else:
                     instruction += "v"
                     position.x += 1
+            while position.y != next_position.y:
+                if next_position.y > position.y:
+                    instruction += ">"
+                    position.y += 1
+                else:
+                    instruction += "<"
+                    position.y -= 1
             instruction += "A"
         instructions.append(instruction)
 
@@ -82,6 +79,13 @@ if __name__ == "__main__":
             position = deepcopy(directional_positions["A"])
             for char in instruction:
                 next_position = directional_positions[char]
+                while position.x != next_position.x:
+                    if next_position.x > position.x:
+                        new_instruction += "v"
+                        position.x += 1
+                    else:
+                        new_instruction += "^"
+                        position.x -= 1
                 while position.y != next_position.y:
                     print(position, next_position)
                     if next_position.y > position.y:
@@ -90,19 +94,23 @@ if __name__ == "__main__":
                     else:
                         new_instruction += "<"
                         position.y -= 1
-                while position.x != next_position.x:
-                    if next_position.x < position.x:
-                        new_instruction += "^"
-                        position.x -= 1
-                    else:
-                        new_instruction += "v"
-                        position.x += 1
                 new_instruction += "A"
             instructions[i] = new_instruction
             # Replace entry by new_instruction in array
 
     print(instructions)
-    for i in range(len(sequences)):
-        sequence_len = int(re.search(r"\d+", sequences[i]).group())
-        path_len = len(instructions[i])
+    total_complexity = 0
+    for sequence, instruction in zip(sequences, instructions):
+        sequence_len = int(re.search(r"\d+", sequence).group())
+        path_len = len(instruction)
         print(sequence_len, path_len)
+        total_complexity += sequence_len * path_len
+    return total_complexity
+
+
+# Main execution
+if __name__ == "__main__":
+    sequences = process_file("dummydata.txt")
+    sequences = process_file("data.txt")
+    print("Part 1:", calculate_length(sequences))
+    # 160800 is too high
