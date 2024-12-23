@@ -26,8 +26,8 @@ def find_connected_nodes(connections):
     return unique_node_matches
 
 
-def find_connected_nodes_startswith(computers, letter):
-    connected_nodes = find_connected_nodes(computers)
+def find_connected_nodes_startswith(connection, letter):
+    connected_nodes = find_connected_nodes(connection)
     filtered_node_matches = [
         list(match)
         for match in connected_nodes
@@ -37,13 +37,34 @@ def find_connected_nodes_startswith(computers, letter):
     return len(filtered_node_matches)
 
 
+def find_maximum_connected_nodes(connections):
+    sets = set()  # Use a set to prevent duplicates
+
+    def search(node, required):
+        key = tuple(sorted(required))
+        if key in sets:
+            return
+        sets.add(key)
+        for neighbor_node in connections[node]:
+            if neighbor_node in required:
+                continue
+            if not all(neighbor_node in connections[query] for query in required):
+                continue
+            search(neighbor_node, required | {neighbor_node})
+
+    for connection in connections:
+        search(connection, {connection})
+
+    required_nodes = sorted(max(sets, key=len))
+    return ",".join(required_nodes)
+
+
 # Main execution
 if __name__ == "__main__":
-    computers = process_file("dummydata.txt")
-    assert len(find_connected_nodes(computers)) == 12
-    assert find_connected_nodes_startswith(computers, "t") == 7
-    computers = process_file("data.txt")
-    print("Part 1", find_connected_nodes_startswith(computers, "t"))
-
-    # Every node is connected to two other nodes
-    # Those nodes are connected to other nodes as well
+    connections = process_file("dummydata.txt")
+    assert len(find_connected_nodes(connections)) == 12
+    assert find_connected_nodes_startswith(connections, "t") == 7
+    print(find_maximum_connected_nodes(connections))
+    connections = process_file("data.txt")
+    print("Part 1", find_connected_nodes_startswith(connections, "t"))
+    print("Part 2", find_maximum_connected_nodes(connections))
