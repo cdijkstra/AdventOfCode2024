@@ -52,3 +52,6 @@ if __name__ == "__main__":
     assert find_connected_nodes_startswith(computers, "t") == 7
     computers = process_file("data.txt")
     print("Part 1", find_connected_nodes_startswith(computers, "t"))
+
+    # Every node is connected to two other nodes
+    # Those nodes are connected to other nodes as well
