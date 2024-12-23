@@ -1,34 +1,26 @@
-from collections import namedtuple
-from copy import deepcopy
-from enum import unique
-
-Node = namedtuple("Node", ["From", "To"])
-
-
 def process_file(filename):
     """Read the file and split into list."""
+    conns = {}
     with open(filename, "r") as file:
-        connections = file.read().splitlines()
-        return [Node(*connection.split("-")) for connection in connections]
+        connections = [line.strip().split("-") for line in file.readlines()]
+        for left, right in connections:
+            if left not in conns:
+                conns[left] = set()
+            if right not in conns:
+                conns[right] = set()
+            conns[left].add(right)
+            conns[right].add(left)
+        return conns
 
 
-def find_connected_nodes(computers):
+def find_connected_nodes(connections):
     node_matches = []
-    for computer in computers:
-        # Considering computer.From and search from computer.To
-        connected_nodes = [
-            comp.To if comp.From == computer.To else comp.From
-            for comp in computers
-            if comp.From == computer.To or comp.To == computer.To
-        ]
-        for node in connected_nodes:
-            last_nodes = [
-                comp.To if comp.From == node else comp.From
-                for comp in computers
-                if comp.From == node or comp.To == node
-            ]
-            if computer.From in last_nodes:
-                node_matches.append([computer.From, computer.To, node])
+    for initial_node, connected_nodes in connections.items():
+        for second_node in connected_nodes:
+            for third_node in connections[second_node]:
+                if initial_node not in connections[third_node]:
+                    continue
+                node_matches.append([initial_node, second_node, third_node])
 
     unique_node_matches = list({tuple(sorted(match)) for match in node_matches})
     return unique_node_matches
